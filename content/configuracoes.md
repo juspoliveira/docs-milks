@@ -1,0 +1,509 @@
+---
+description: Parâmetros globais que afetam o comportamento do módulo de pagamento
+---
+
+# Configurações
+
+Os ajustes iniciais que balizam os cálculos da folha, emissão de documentos e relatórios de saída devem ser feitos a partir das opções disponíveis neste módulo.
+
+<figure>
+  <img src="https://447677371-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FwyOmfrOj0hbYJWKsVGBS%2Fuploads%2Fg2VxmOiWM4qLQdpqTtN6%2Fpay-config-fiscais.png?alt=media&#x26;token=6379e38d-e95a-47a9-b953-cf4741c40185" alt="Tela de configurações do módulo Pay">
+  <figcaption>Tela de configurações do módulo Pay</figcaption>
+</figure>
+
+## Descrição dos Elementos
+
+Seguindo a numeração presente na imagem acima:
+
+**1. Exibir preço líquido no demonstrativo**
+
+Checkbox que controla se o preço líquido por litro de leite deve ser exibido no demonstrativo de pagamento do produtor.
+
+**Como ajustar:**
+- Acesse o menu Administração > Configurações
+- Localize a seção 'Parâmetros' no módulo de Pagamento
+- Marque ou desmarque o checkbox 'Exibir preço líquido no demonstrativo'
+- Clique em 'Salvar' para aplicar as alterações
+
+**Para que serve:**
+Controla a exibição do preço líquido por litro no demonstrativo de pagamento que é disponibilizado ao produtor. Quando habilitado, o produtor visualiza o valor líquido que recebe por litro após descontos e impostos.
+
+**Como afeta o cálculo:**
+Esta configuração não afeta os cálculos da folha de pagamento. É apenas uma opção de visualização que determina se o campo de preço líquido será exibido ou ocultado no demonstrativo do produtor.
+
+---
+
+**2. Exibir consolidação de qualidade no demonstrativo**
+
+Checkbox que controla se a consolidação de qualidade (médias de gordura, proteína, CCS, CPP, etc.) deve ser exibida no demonstrativo do produtor.
+
+**Como ajustar:**
+- Acesse o menu Administração > Configurações
+- Localize a seção 'Parâmetros' no módulo de Pagamento
+- Marque ou desmarque o checkbox 'Exibir consolidação de qualidade no demonstrativo'
+- Clique em 'Salvar' para aplicar as alterações
+
+**Para que serve:**
+Define se as informações de consolidação de qualidade do período (médias de gordura, proteína, contagem de células somáticas, contagem de células patogênicas, temperatura, crioscopia, etc.) serão apresentadas no demonstrativo de pagamento do produtor.
+
+**Como afeta o cálculo:**
+Esta configuração não afeta os cálculos da folha de pagamento. É apenas uma opção de visualização que controla a exibição das informações de qualidade no demonstrativo.
+
+---
+
+**3. Exibir leite fora do padrão no demonstrativo**
+
+Checkbox que controla se o volume de leite fora do padrão diariamente deve ser exibido na seção de coletas do demonstrativo.
+
+**Como ajustar:**
+- Acesse o menu Administração > Configurações
+- Localize a seção 'Parâmetros' no módulo de Pagamento
+- Marque ou desmarque o checkbox 'Exibir leite fora do padrão no demonstrativo'
+- Clique em 'Salvar' para aplicar as alterações
+
+**Para que serve:**
+Permite que o produtor visualize no demonstrativo quais coletas tiveram volume considerado fora do padrão de qualidade. Isso ajuda na transparência do processo de pagamento e permite que o produtor identifique dias específicos com problemas de qualidade.
+
+**Como afeta o cálculo:**
+Esta configuração não afeta os cálculos da folha de pagamento. É apenas uma opção de visualização que determina se as informações de volume fora do padrão serão exibidas na seção de coletas do demonstrativo.
+
+---
+
+**4. Considerar volume fora do padrão**
+
+Checkbox que define se o volume de leite fora do padrão deve ser considerado no fornecimento de leite global e do produtor.
+
+**Como ajustar:**
+- Acesse o menu Administração > Configurações
+- Localize a seção 'Parâmetros' no módulo de Pagamento
+- Marque ou desmarque o checkbox 'Considerar volume fora do padrão'
+- Clique em 'Salvar' para aplicar as alterações
+
+**Para que serve:**
+Define se o volume de leite que não atende aos padrões de qualidade estabelecidos deve ser incluído no cálculo do volume total fornecido pelo produtor. Quando desmarcado, apenas o volume dentro do padrão é considerado para os cálculos de pagamento.
+
+**Como afeta o cálculo:**
+Esta configuração afeta diretamente os cálculos da folha de pagamento. Quando habilitada, o volume fora do padrão é incluído no volume total fornecido, impactando o cálculo do pagamento. Quando desabilitada, apenas o volume dentro do padrão é considerado, resultando em valores menores de pagamento para produtores com problemas de qualidade.
+
+---
+
+**5. Pagamento por fazenda**
+
+Checkbox que define se todo o cálculo de pagamento deve considerar o registro da fazenda além do registro do produtor.
+
+**Como ajustar:**
+- Acesse o menu Administração > Configurações
+- Localize a seção 'Parâmetros' no módulo de Pagamento
+- Marque ou desmarque o checkbox 'Pagamento por fazenda'
+- Clique em 'Salvar' para aplicar as alterações
+
+**Para que serve:**
+Permite que o sistema calcule pagamentos separados para cada fazenda de um mesmo produtor. Quando habilitado, o sistema considera a fazenda como unidade de cálculo, permitindo que um produtor tenha múltiplos pagamentos (um por fazenda) na mesma folha.
+
+**Como afeta o cálculo:**
+Esta configuração afeta diretamente a estrutura dos cálculos da folha de pagamento. Quando habilitada, o sistema agrupa os cálculos por produtor e fazenda, gerando registros de pagamento separados para cada combinação. Isso permite que produtores com múltiplas fazendas tenham contratos e cálculos independentes por propriedade.
+
+---
+
+**6. Bloqueia pagamento quando IEPR estiver inativo**
+
+Checkbox que indica se o sistema deve bloquear o pagamento ao produtor quando detectar que o IEPR (Inscrição Estadual do Produtor Rural) está inativo.
+
+**Como ajustar:**
+- Acesse o menu Administração > Configurações
+- Localize a seção 'Parâmetros' no módulo de Pagamento
+- Marque ou desmarque o checkbox 'Bloqueia pagamento quando IEPR estiver inativo'
+- Clique em 'Salvar' para aplicar as alterações
+
+**Para que serve:**
+Garante conformidade fiscal bloqueando pagamentos a produtores com IEPR inativo. Quando habilitado, o sistema verifica o status do IEPR durante o cálculo da folha e impede o processamento de pagamentos para produtores com situação irregular.
+
+**Como afeta o cálculo:**
+Esta configuração afeta diretamente os cálculos da folha de pagamento. Quando habilitada e combinada com 'Pagamento por fazenda', o sistema bloqueia completamente o pagamento ao produtor/fazenda quando detecta IEPR inativo, resultando em zero pagamento para esses casos. O bloqueio ocorre durante o processo de cálculo da folha.
+
+---
+
+**7. Descontar volume de água automaticamente**
+
+Checkbox que define se o volume de água calculado pela crioscopia deve ser descontado automaticamente do volume total fornecido.
+
+**Como ajustar:**
+- Acesse o menu Administração > Configurações
+- Localize a seção 'Parâmetros' no módulo de Pagamento
+- Marque ou desmarque o checkbox 'Descontar volume de água automaticamente'
+- Clique em 'Salvar' para aplicar as alterações
+
+**Para que serve:**
+Automatiza o desconto de volume de água detectado através da análise de crioscopia. Quando habilitado, o sistema calcula automaticamente o volume de água presente no leite com base no resultado da crioscopia e desconta esse valor do volume total fornecido pelo produtor.
+
+**Como afeta o cálculo:**
+Esta configuração afeta diretamente os cálculos da folha de pagamento. Quando habilitada, o sistema utiliza o resultado da crioscopia para calcular o volume de água e automaticamente desconta esse valor do volume total fornecido. Isso reduz o volume considerado para pagamento, impactando diretamente o valor total a ser pago ao produtor.
+
+---
+
+**8. Exibir desconto por crioscopia no demonstrativo**
+
+Checkbox que controla se as informações de volume de água descontado devem ser exibidas no demonstrativo do produtor.
+
+**Como ajustar:**
+- Acesse o menu Administração > Configurações
+- Localize a seção 'Parâmetros' no módulo de Pagamento
+- Marque ou desmarque o checkbox 'Exibir desconto por crioscopia no demonstrativo'
+- Clique em 'Salvar' para aplicar as alterações
+
+**Para que serve:**
+Permite que o produtor visualize no demonstrativo o volume de água que foi descontado com base na análise de crioscopia. Isso proporciona transparência sobre os descontos aplicados e ajuda o produtor a entender como o volume final foi calculado.
+
+**Como afeta o cálculo:**
+Esta configuração não afeta os cálculos da folha de pagamento. É apenas uma opção de visualização que determina se as informações de desconto por crioscopia serão exibidas no demonstrativo do produtor.
+
+---
+
+**9. Casas decimais na fórmula**
+
+Campo numérico que define a quantidade de casas decimais utilizadas no cálculo dos itens da fórmula de pagamento.
+
+**Como ajustar:**
+- Acesse o menu Administração > Configurações
+- Localize a seção 'Parâmetros' no módulo de Pagamento
+- No campo 'Casas decimais na fórmula', informe um valor entre 0 e 10
+- Clique em 'Salvar' para aplicar as alterações
+
+**Para que serve:**
+Define a precisão numérica utilizada nos cálculos das fórmulas de pagamento. Controla quantas casas decimais são mantidas durante o processamento das fórmulas antes do arredondamento final, garantindo consistência e precisão nos cálculos.
+
+**Como afeta o cálculo:**
+Esta configuração afeta diretamente os cálculos da folha de pagamento. O valor definido (0 a 10) determina a precisão dos cálculos intermediários das fórmulas de pagamento. Valores maiores resultam em cálculos mais precisos, enquanto valores menores podem causar arredondamentos mais agressivos.
+
+---
+
+**10. Fórmula do preço médio**
+
+Campo de seleção que define a fórmula utilizada para calcular o preço médio do demonstrativo do produtor.
+
+**Como ajustar:**
+- Acesse o menu Administração > Configurações
+- Localize a seção 'Parâmetros' no módulo de Pagamento
+- No campo 'Fórmula do preço médio', selecione uma das opções:
+  - 'Total líquido / Volume' (L_V): Calcula (Total Líquido + Créditos - Impostos) / Volume
+  - 'Total de créditos + Incentivos / Volume' (CI_V): Calcula (Total Fornecimento + Créditos) / Volume
+  - 'Soma dos créditos da composição' (FSA-I_V): Soma todos os créditos da composição de pagamento
+- Clique em 'Salvar' para aplicar as alterações
+
+**Para que serve:**
+Define qual método matemático será utilizado para calcular o preço médio por litro exibido no demonstrativo do produtor. Cada fórmula considera diferentes componentes (líquido, impostos, créditos) resultando em valores distintos de preço médio.
+
+**Como afeta o cálculo:**
+Esta configuração afeta diretamente os cálculos da folha de pagamento. O sistema calcula o preço médio usando a fórmula selecionada: L_V considera impostos descontados, CI_V não considera impostos, e FSA-I_V soma apenas os créditos da composição. O resultado impacta diretamente o valor exibido no demonstrativo e pode influenciar relatórios e análises comparativas.
+
+---
+
+**11. Natureza de operação folha do produtor**
+
+Campo de seleção que define a natureza de operação padrão utilizada na emissão de notas fiscais eletrônicas da folha de pagamento do produtor.
+
+**Como ajustar:**
+- Acesse o menu Administração > Configurações
+- Localize a seção 'Documentos fiscais' no módulo de Pagamento
+- No campo 'Natureza de operação folha do produtor', selecione uma natureza de operação da lista
+- A lista é preenchida com as naturezas de operação cadastradas no sistema
+- Clique em 'Salvar' para aplicar as alterações
+
+**Para que serve:**
+Define qual natureza de operação fiscal será utilizada como padrão na emissão de notas fiscais eletrônicas (NF-e) para os pagamentos da folha. Esta informação é obrigatória para a emissão de NF-e e deve estar de acordo com a legislação fiscal vigente.
+
+**Como afeta o cálculo:**
+Esta configuração não afeta os cálculos da folha de pagamento, mas é essencial para a emissão de documentos fiscais. A natureza de operação selecionada é utilizada no processo de emissão de NF-e, garantindo que os documentos fiscais sejam emitidos com a classificação correta perante o fisco.
+
+---
+
+**12. Natureza dos rendimentos (Informe de Rendimentos)**
+
+Campo de texto que define a descrição da natureza dos rendimentos exibida no informe de rendimentos para declaração de IRPF.
+
+**Como ajustar:**
+- Acesse o menu Administração > Configurações
+- Localize a seção 'Documentos fiscais' no módulo de Pagamento
+- No campo 'Natureza dos rendimentos (Informe de Rendimentos)', digite a descrição desejada
+- O texto pode ter até 500 caracteres
+- Exemplo: 'Rendimentos decorrentes da comercialização de produção rural sem vínculo empregatício'
+- Clique em 'Salvar' para aplicar as alterações
+
+**Para que serve:**
+Define o texto que será exibido no informe de rendimentos fornecido aos produtores para declaração de Imposto de Renda Pessoa Física (IRPF). Esta descrição deve refletir a natureza jurídica dos pagamentos realizados.
+
+**Como afeta o cálculo:**
+Esta configuração não afeta os cálculos da folha de pagamento. É utilizada apenas para fins de documentação e declaração fiscal, fornecendo a descrição correta dos rendimentos no informe de rendimentos entregue aos produtores.
+
+---
+
+**13. PIS e Cofins leite (%)**
+
+Campo numérico que define a alíquota percentual de PIS (Programa de Integração Social) e Cofins (Contribuição para o Financiamento da Seguridade Social) aplicada sobre o leite.
+
+**Como ajustar:**
+- Acesse o menu Administração > Configurações
+- Localize a seção 'Impostos' no módulo de Pagamento
+- No campo 'PIS e Cofins leite (%)', informe a alíquota percentual (ex: 1.65 para 1,65%)
+- O valor deve estar entre 0 e 100
+- Clique em 'Salvar' para aplicar as alterações
+
+**Para que serve:**
+Define a alíquota de PIS e Cofins que será aplicada sobre o preço médio do leite nos cálculos de impostos. Esta alíquota é utilizada para calcular o valor dos impostos incidentes sobre o pagamento ao produtor.
+
+**Como afeta o cálculo:**
+Esta configuração afeta diretamente os cálculos da folha de pagamento. A alíquota é aplicada sobre o preço médio do leite para calcular o valor de PIS/Cofins, que é então descontado do valor total do pagamento. Este valor impacta diretamente o valor líquido a ser pago ao produtor.
+
+---
+
+**14. PIS e Cofins frete (%)**
+
+Campo numérico que define a alíquota percentual de PIS e Cofins aplicada sobre o frete.
+
+**Como ajustar:**
+- Acesse o menu Administração > Configurações
+- Localize a seção 'Impostos' no módulo de Pagamento
+- No campo 'PIS e Cofins frete (%)', informe a alíquota percentual
+- O valor deve estar entre 0 e 100
+- Clique em 'Salvar' para aplicar as alterações
+
+**Para que serve:**
+Define a alíquota de PIS e Cofins que será aplicada sobre os valores de frete nos cálculos de impostos. Esta configuração é utilizada quando há cobrança de frete separada do valor do leite.
+
+**Como afeta o cálculo:**
+Esta configuração afeta os cálculos da folha de pagamento quando há valores de frete envolvidos. A alíquota é aplicada sobre os valores de frete para calcular os impostos incidentes, impactando o valor total de impostos e consequentemente o valor líquido do pagamento.
+
+---
+
+**15. ICMS leite (%)**
+
+Campo numérico que define a alíquota percentual de ICMS (Imposto sobre Circulação de Mercadorias e Serviços) aplicada sobre o leite.
+
+**Como ajustar:**
+- Acesse o menu Administração > Configurações
+- Localize a seção 'Impostos' no módulo de Pagamento
+- No campo 'ICMS leite (%)', informe a alíquota percentual (ex: 12.00 para 12%)
+- O valor deve estar entre 0 e 100
+- Clique em 'Salvar' para aplicar as alterações
+
+**Para que serve:**
+Define a alíquota de ICMS que será aplicada sobre o preço médio do leite nos cálculos de impostos. O ICMS é um imposto estadual que incide sobre a circulação de mercadorias.
+
+**Como afeta o cálculo:**
+Esta configuração afeta diretamente os cálculos da folha de pagamento. A alíquota é aplicada sobre o preço médio do leite para calcular o valor de ICMS, que é então descontado do valor total do pagamento. O valor total de impostos (ICMS + PIS/Cofins) é subtraído do preço médio para calcular o valor líquido por litro, impactando diretamente o valor final a ser pago ao produtor.
+
+---
+
+**16. Tabela de referência CEPEA**
+
+Campo de seleção que define qual tabela de preço será utilizada como referência para cálculos comparativos com o CEPEA (Centro de Estudos Avançados em Economia Aplicada).
+
+**Como ajustar:**
+- Acesse o menu Administração > Configurações
+- Localize a seção 'Relatórios' no módulo de Pagamento
+- No campo 'Tabela de referência CEPEA', selecione uma tabela de preço da lista
+- A lista é preenchida com as tabelas de preço cadastradas no sistema
+- Clique em 'Salvar' para aplicar as alterações
+
+**Para que serve:**
+Define qual tabela de preço cadastrada no sistema será utilizada como referência para comparações com índices CEPEA. Esta tabela é utilizada em relatórios e análises comparativas para calcular diferenças percentuais entre o preço pago e índices de referência do mercado.
+
+**Como afeta o cálculo:**
+Esta configuração não afeta diretamente os cálculos da folha de pagamento, mas é utilizada em relatórios e análises comparativas. O sistema utiliza o valor da tabela selecionada para calcular a porcentagem de diferença em relação ao preço médio pago (porcentagem_cepea), permitindo análises de competitividade e benchmarking de preços.
+
+---
+
+**17. Precisão do valor unitário**
+
+Campo de seleção que define a quantidade de casas decimais utilizadas na formatação do valor unitário do demonstrativo do produtor.
+
+**Como ajustar:**
+- Acesse o menu Administração > Configurações
+- Localize a seção 'Relatórios' no módulo de Pagamento
+- No campo 'Precisão do valor unitário', selecione uma das opções:
+  - 'Três casas' (3): Exibe valores com 3 casas decimais
+  - 'Quatro casas' (4): Exibe valores com 4 casas decimais
+- Clique em 'Salvar' para aplicar as alterações
+
+**Para que serve:**
+Define a precisão numérica utilizada na formatação do valor unitário (preço por litro) exibido no demonstrativo do produtor. Controla quantas casas decimais são apresentadas, influenciando a legibilidade e precisão da informação visualizada.
+
+**Como afeta o cálculo:**
+Esta configuração não afeta os cálculos da folha de pagamento, apenas a formatação dos valores exibidos no demonstrativo. Os cálculos internos mantêm sua precisão original, mas a apresentação ao produtor segue a precisão configurada (3 ou 4 casas decimais).
+
+---
+
+**18. Ocultar preço médio no demonstrativo**
+
+Checkbox que controla se o preço médio deve ser ocultado no demonstrativo de pagamento do produtor.
+
+**Como ajustar:**
+- Acesse o menu Administração > Configurações
+- Localize a seção 'Relatórios' no módulo de Pagamento
+- Marque ou desmarque o checkbox 'Ocultar preço médio no demonstrativo'
+- Clique em 'Salvar' para aplicar as alterações
+
+**Para que serve:**
+Permite ocultar o campo de preço médio no demonstrativo de pagamento. Quando habilitado, o produtor não visualiza o preço médio calculado, mantendo apenas outras informações do demonstrativo visíveis.
+
+**Como afeta o cálculo:**
+Esta configuração não afeta os cálculos da folha de pagamento. É apenas uma opção de visualização que controla se o campo de preço médio será exibido ou ocultado no demonstrativo. O cálculo do preço médio continua sendo realizado normalmente, apenas sua exibição é controlada.
+
+---
+
+**19. Exibir dados da nota fiscal no demonstrativo**
+
+Checkbox que controla se os dados da nota fiscal eletrônica (número, série, data) devem ser exibidos no demonstrativo de pagamento.
+
+**Como ajustar:**
+- Acesse o menu Administração > Configurações
+- Localize a seção 'Relatórios' no módulo de Pagamento
+- Marque ou desmarque o checkbox 'Exibir dados da nota fiscal no demonstrativo'
+- Clique em 'Salvar' para aplicar as alterações
+
+**Para que serve:**
+Permite que o produtor visualize no demonstrativo as informações da nota fiscal eletrônica emitida para o pagamento, incluindo número, série e data de emissão. Isso facilita a conciliação fiscal e documental.
+
+**Como afeta o cálculo:**
+Esta configuração não afeta os cálculos da folha de pagamento. É apenas uma opção de visualização que determina se as informações da NF-e serão exibidas no demonstrativo do produtor.
+
+---
+
+**20. Exibir dados do tanque comunitário no demonstrativo**
+
+Checkbox que controla se a referência do tanque comunitário deve ser exibida no demonstrativo quando o produtor estiver vinculado a um tanque comunitário.
+
+**Como ajustar:**
+- Acesse o menu Administração > Configurações
+- Localize a seção 'Relatórios' no módulo de Pagamento
+- Marque ou desmarque o checkbox 'Exibir dados do tanque comunitário no demonstrativo'
+- Clique em 'Salvar' para aplicar as alterações
+
+**Para que serve:**
+Permite que produtores vinculados a tanques comunitários visualizem no demonstrativo a referência do tanque ao qual estão associados. Isso ajuda na identificação e rastreabilidade do leite coletado em tanques compartilhados.
+
+**Como afeta o cálculo:**
+Esta configuração não afeta os cálculos da folha de pagamento. É apenas uma opção de visualização que determina se as informações do tanque comunitário serão exibidas no demonstrativo quando aplicável.
+
+---
+
+**21. Modelo de exportação**
+
+Campo de seleção que define o modelo da planilha de exportação de demonstrativos.
+
+**Como ajustar:**
+- Acesse o menu Administração > Configurações
+- Localize a seção 'Relatórios' no módulo de Pagamento
+- No campo 'Modelo de exportação', selecione uma das opções:
+  - 'Planilha excel simplificada' (S): Exporta dados básicos em formato Excel
+  - 'Planilha excel completa' (C): Exporta todos os dados detalhados em formato Excel
+  - 'Arquivo JSON' (J): Exporta dados em formato JSON para integração
+- Clique em 'Salvar' para aplicar as alterações
+
+**Para que serve:**
+Define o formato e nível de detalhamento dos dados exportados nos demonstrativos. Cada modelo oferece diferentes níveis de informação e formatos adequados para diferentes necessidades (análise, integração, relatórios gerenciais).
+
+**Como afeta o cálculo:**
+Esta configuração não afeta os cálculos da folha de pagamento, mas determina como os dados calculados serão estruturados na exportação. O modelo selecionado influencia quais campos são incluídos e como são organizados nos arquivos exportados. Além disso, ao selecionar 'C' (completo) ou 'J' (JSON), campos adicionais de configuração tornam-se disponíveis.
+
+---
+
+**22. Ordenação dos registros no relatório**
+
+Campo de seleção que define a ordenação dos campos para os registros no relatório completo. Disponível apenas quando o modelo de exportação é 'Completo' (C).
+
+**Como ajustar:**
+- Acesse o menu Administração > Configurações
+- Localize a seção 'Relatórios' no módulo de Pagamento
+- Configure o campo 'Modelo de exportação' como 'Planilha excel completa' (C)
+- O campo 'Ordenação dos registros no relatório' aparecerá automaticamente
+- Selecione uma das opções:
+  - 'Nome Produtor, Código Produtor' (PC): Ordena por nome e depois código do produtor
+  - 'Banco, Nome Produtor, Código Produtor' (BPC): Ordena por banco, nome e código
+- Clique em 'Salvar' para aplicar as alterações
+
+**Para que serve:**
+Define a ordem de apresentação dos registros no relatório completo exportado. Permite organizar os dados de forma que facilite a análise e consulta, seja por ordem alfabética de produtores ou agrupando por instituição bancária.
+
+**Como afeta o cálculo:**
+Esta configuração não afeta os cálculos da folha de pagamento, apenas a ordenação dos dados no relatório exportado. A ordenação é aplicada durante a geração do arquivo de exportação, facilitando a análise e organização dos dados para diferentes necessidades (pagamentos bancários, análises por produtor, etc.).
+
+---
+
+**23. Composição de agrupamento**
+
+Campo de texto que define o código da composição que irá agrupar outros valores de composição na exportação JSON. Disponível apenas quando o modelo de exportação é 'JSON' (J).
+
+**Como ajustar:**
+- Acesse o menu Administração > Configurações
+- Localize a seção 'Relatórios' no módulo de Pagamento
+- Configure o campo 'Modelo de exportação' como 'Arquivo JSON' (J)
+- Os campos de configuração JSON aparecerão automaticamente
+- No campo 'Composição de agrupamento', digite o código da composição que servirá como agrupador
+- O código deve corresponder a uma composição existente no modelo de pagamento
+- Clique em 'Salvar' para aplicar as alterações
+
+**Para que serve:**
+Define qual composição de pagamento será utilizada como código de agrupamento na exportação JSON. Esta composição receberá a soma de outras composições configuradas, facilitando a consolidação de valores para sistemas externos.
+
+**Como afeta o cálculo:**
+Esta configuração não afeta os cálculos da folha de pagamento, mas influencia a estrutura dos dados exportados em formato JSON. Durante a exportação, o sistema agrupa os valores das composições especificadas no campo 'Composições agregadas' e os soma na composição de agrupamento, criando uma estrutura consolidada para integração com sistemas externos.
+
+---
+
+**24. Composições agregadas**
+
+Campo de texto que define os códigos das composições que serão agregadas na composição de agrupamento, separados por vírgula. Disponível apenas quando o modelo de exportação é 'JSON' (J).
+
+**Como ajustar:**
+- Acesse o menu Administração > Configurações
+- Localize a seção 'Relatórios' no módulo de Pagamento
+- Configure o campo 'Modelo de exportação' como 'Arquivo JSON' (J)
+- No campo 'Composições agregadas', digite os códigos das composições separados por vírgula
+- Exemplo: 'BONUS,INCENTIVO,QUALIDADE'
+- Os códigos devem corresponder a composições existentes no modelo de pagamento
+- Clique em 'Salvar' para aplicar as alterações
+
+**Para que serve:**
+Define quais composições de pagamento terão seus valores somados e agregados na composição de agrupamento durante a exportação JSON. Permite consolidar múltiplas composições em um único valor para facilitar a integração com sistemas externos.
+
+**Como afeta o cálculo:**
+Esta configuração não afeta os cálculos da folha de pagamento, mas influencia a estrutura dos dados exportados. Durante a exportação JSON, os valores das composições listadas são somados e o total é atribuído à composição de agrupamento configurada, criando uma estrutura de dados consolidada para sistemas externos.
+
+---
+
+**25. Agregar créditos na composição**
+
+Checkbox que define se os créditos adicionais do produtor devem ser agregados à composição de agrupamento na exportação JSON. Disponível apenas quando o modelo de exportação é 'JSON' (J).
+
+**Como ajustar:**
+- Acesse o menu Administração > Configurações
+- Localize a seção 'Relatórios' no módulo de Pagamento
+- Configure o campo 'Modelo de exportação' como 'Arquivo JSON' (J)
+- Marque ou desmarque o checkbox 'Agregar créditos na composição'
+- Clique em 'Salvar' para aplicar as alterações
+
+**Para que serve:**
+Define se os créditos adicionais do produtor (valores extras além das composições regulares) devem ser incluídos na soma da composição de agrupamento durante a exportação JSON. Isso permite consolidar todos os valores de crédito em um único campo.
+
+**Como afeta o cálculo:**
+Esta configuração não afeta os cálculos da folha de pagamento, mas influencia a estrutura dos dados exportados em formato JSON. Quando habilitado, os créditos adicionais do produtor são somados à composição de agrupamento durante a exportação, criando uma estrutura consolidada que inclui tanto as composições quanto os créditos extras.
+
+---
+
+**26. ID da planilha de dados no Google**
+
+Campo de texto que armazena o ID da planilha do Google Sheets utilizada para exportação de dados dos demonstrativos.
+
+**Como ajustar:**
+- Acesse o menu Administração > Configurações
+- Localize a seção 'Relatórios' no módulo de Pagamento
+- No campo 'ID da planilha de dados no Google', digite o ID da planilha do Google Sheets
+- O ID pode ser encontrado na URL da planilha: https://docs.google.com/spreadsheets/d/[ID_AQUI]/edit
+- Clique em 'Salvar' para aplicar as alterações
+
+**Para que serve:**
+Configura a integração com Google Sheets para exportação automática de dados dos demonstrativos. O ID da planilha permite que o sistema identifique e atualize a planilha correta com os dados calculados da folha de pagamento.
+
+**Como afeta o cálculo:**
+Esta configuração não afeta os cálculos da folha de pagamento, mas permite a exportação automática dos dados calculados para uma planilha do Google Sheets. O sistema utiliza este ID para identificar a planilha de destino e atualizá-la com os dados dos demonstrativos, facilitando análises e compartilhamento de informações.

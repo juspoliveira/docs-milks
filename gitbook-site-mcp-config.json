@@ -1,0 +1,29 @@
+{
+  "description": "Configuração para gerenciar Site MCP Servers no GitBook",
+  "api": {
+    "baseUrl": "https://api.gitbook.com/v1",
+    "endpoints": {
+      "listMcpServers": "GET /orgs/{organizationId}/sites/{siteId}/mcp-servers",
+      "createMcpServer": "POST /orgs/{organizationId}/sites/{siteId}/mcp-servers",
+      "getMcpServer": "GET /orgs/{organizationId}/sites/{siteId}/mcp-servers/{siteMcpServerId}",
+      "updateMcpServer": "PATCH /orgs/{organizationId}/sites/{siteId}/mcp-servers/{siteMcpServerId}",
+      "deleteMcpServer": "DELETE /orgs/{organizationId}/sites/{siteId}/mcp-servers/{siteMcpServerId}"
+    }
+  },
+  "mcpServer": {
+    "name": "Pay Manual MCP Server",
+    "url": "https://example.com/mcp",
+    "headers": {
+      "Authorization": "Bearer YOUR_TOKEN",
+      "Content-Type": "application/json"
+    }
+  },
+  "requiredFields": {
+    "organizationId": "ID da organização no GitBook",
+    "siteId": "ID do Docs Site no GitBook",
+    "name": "Nome do servidor MCP (1-100 caracteres)",
+    "url": "URL do servidor MCP (URI válido, max 2048 caracteres)",
+    "headers": "Objeto com headers HTTP para requisições ao servidor"
+  }
+}
+

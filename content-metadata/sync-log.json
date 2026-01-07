@@ -1,0 +1,10 @@
+[
+  {
+    "timestamp": "2026-01-06T18:59:08.270Z",
+    "type": "full_sync",
+    "pagesCount": 12,
+    "successful": 12,
+    "skipped": 0,
+    "errors": 0
+  }
+]

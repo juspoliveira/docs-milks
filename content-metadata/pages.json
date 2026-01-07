@@ -1,0 +1,103 @@
+{
+  "spaceId": "wyOmfrOj0hbYJWKsVGBS",
+  "spaceName": "Documentação - Milks Pay",
+  "lastFullSync": null,
+  "pages": [
+    {
+      "id": "8JQoDA1iUNUPXnqSri5H",
+      "title": "Pagamento a produtores",
+      "path": "pagamento-a-produtores",
+      "file": "content/pagamento-a-produtores.md",
+      "hash": "ea88a0dbb36351e1fa13f47ffa90eb36",
+      "lastSynced": "2026-01-06T18:58:53.383Z"
+    },
+    {
+      "id": "EdIApUw5S2w61zVDnLpK",
+      "title": "Conceito e visão de operação",
+      "path": "conceito-e-visao-de-operacao",
+      "file": "content/conceito-e-visao-de-operacao.md",
+      "hash": "b28b905439395ddb5c04bf2201073dca",
+      "lastSynced": "2026-01-06T18:58:54.820Z"
+    },
+    {
+      "id": "4qvdPd91MFxH0S2f5Sep",
+      "title": "Configurações",
+      "path": "configuracoes",
+      "file": "content/configuracoes.md",
+      "hash": "018e9851a0731592e648e047fbde1e19",
+      "lastSynced": "2026-01-06T18:58:56.156Z"
+    },
+    {
+      "id": "yZrkSByCsFq8zw16QPGe",
+      "title": "Consolidação de qualidade",
+      "path": "consolidacao-de-qualidade",
+      "file": "content/consolidacao-de-qualidade.md",
+      "hash": "deec3517b3885a2a5433d11e14542a45",
+      "lastSynced": "2026-01-06T18:58:57.578Z"
+    },
+    {
+      "id": "xM7YtvqzxQSvVf3uXJy6",
+      "title": "Sistema de Precificação (SVL)",
+      "path": "sistema-de-precificacao-svl",
+      "file": "content/sistema-de-precificacao-svl.md",
+      "hash": "c00a8b8e8e85395d4dbef75600b74da9",
+      "lastSynced": "2026-01-06T18:58:58.968Z"
+    },
+    {
+      "id": "aHwURHoKqQuen3Ij3DXZ",
+      "title": "Tabela de preços",
+      "path": "tabela-de-precos",
+      "file": "content/tabela-de-precos.md",
+      "hash": "5650a5a0ea97c6c0092f1a6a610f09b3",
+      "lastSynced": "2026-01-06T18:59:00.179Z"
+    },
+    {
+      "id": "80NtHS9FJ1PQkloACN80",
+      "title": "Modelos de pagamento",
+      "path": "modelos-de-pagamento",
+      "file": "content/modelos-de-pagamento.md",
+      "hash": "d21bc47764d379e7e50ec93d72df8339",
+      "lastSynced": "2026-01-06T18:59:01.197Z"
+    },
+    {
+      "id": "hl1yNPaOcLDrxWzFuzHm",
+      "title": "Contratos e vigências",
+      "path": "contratos-e-vigencias",
+      "file": "content/contratos-e-vigencias.md",
+      "hash": "09097141d6128d89a488379e5c317111",
+      "lastSynced": "2026-01-06T18:59:02.599Z"
+    },
+    {
+      "id": "Z9Yri24ons8L50xcTbHg",
+      "title": "Impostos",
+      "path": "impostos",
+      "file": "content/impostos.md",
+      "hash": "2a43112ea1bdd84ffb8eac17a360a4ac",
+      "lastSynced": "2026-01-06T18:59:03.850Z"
+    },
+    {
+      "id": "ZUyNlmClAXzenXudp1G0",
+      "title": "Folha e simulações",
+      "path": "folha-e-simulacoes",
+      "file": "content/folha-e-simulacoes.md",
+      "hash": "6f2a6e5f3549063d3bd4854ea84830de",
+      "lastSynced": "2026-01-06T18:59:05.219Z"
+    },
+    {
+      "id": "5Qih5TBZ7UUU9JvEVkjK",
+      "title": "Acordos comerciais",
+      "path": "acordos-comerciais",
+      "file": "content/acordos-comerciais.md",
+      "hash": "70f4a4928a0c61965f58d8ac64d822b5",
+      "lastSynced": "2026-01-06T18:59:06.594Z"
+    },
+    {
+      "id": "RqeemF99TWZdh8lGQCeb",
+      "title": "Relatórios e Conciliações",
+      "path": "relatorios-e-conciliacoes",
+      "file": "content/relatorios-e-conciliacoes.md",
+      "hash": "d269ce27aabaed1a700159699382e96d",
+      "lastSynced": "2026-01-06T18:59:07.767Z"
+    }
+  ]
+}

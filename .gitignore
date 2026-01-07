@@ -1,0 +1,45 @@
+# Dependências
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Arquivos de ambiente
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+_book/
+dist/
+build/
+*.log
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# GitBook
+.gitbook/
+
+# gitbook-mcp
+gitbook-mcp/node_modules/
+gitbook-mcp/dist/
+gitbook-mcp/.env.local
+gitbook-mcp/*.log
+
+# Scripts temporários
+test-*.js
+
+# Conteúdo sincronizado (opcional - descomente se não quiser versionar)
+# content/
+# content-metadata/
+
