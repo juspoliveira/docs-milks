@@ -13,7 +13,9 @@ export const NUMBER_BADGE_CSS = `
     border-radius: 50%;
     width: 28px;
     height: 28px;
-    display: flex;
+    min-width: 28px;
+    min-height: 28px;
+    display: flex !important;
     align-items: center;
     justify-content: center;
     font-weight: bold;
@@ -21,10 +23,9 @@ export const NUMBER_BADGE_CSS = `
     z-index: 10000;
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
     border: 2px solid white;
-}
-
-.element-number-badge::before {
-    content: attr(data-number);
+    line-height: 1;
+    padding: 0;
+    margin: 0;
 }
 
 .form-group {

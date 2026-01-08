@@ -82,31 +82,18 @@ export async function detectElements(page) {
             return '';
         }
         
-        // Selectors for interactive elements
+        // Selectors for editable elements related to database attributes
+        // Only elements with ng-model linked to record.* (database fields)
         const selectors = [
-            'input[type="text"]',
-            'input[type="number"]',
-            'input[type="email"]',
-            'input[type="password"]',
-            'input[type="tel"]',
-            'input[type="url"]',
-            'input[type="date"]',
-            'input[type="time"]',
-            'input[type="datetime-local"]',
-            'input[type="search"]',
-            'input[type="checkbox"]',
-            'input[type="radio"]',
-            'input[type="button"]',
-            'input[type="submit"]',
-            'input[type="reset"]',
-            'select',
-            'textarea',
-            'button',
-            '[ng-click]',
-            '[uib-dropdown]',
-            '[ui-sortable]',
-            '.panel-heading',
-            '.form-group:has(input, select, textarea, button)'
+            // Inputs with ng-model linked to record (database fields)
+            'input[ng-model^="record."]',
+            // Selects with ng-model linked to record
+            'select[ng-model^="record."]',
+            // Textareas with ng-model linked to record
+            'textarea[ng-model^="record."]',
+            // Area for formula construction
+            '[ui-sortable][ng-model="record.formula"]',
+            '[ui-sortable]'
         ];
         
         selectors.forEach(selector => {
@@ -130,26 +117,60 @@ export async function detectElements(page) {
                         return;
                     }
                     
+                    // EXCLUIR: Títulos, headers, elementos decorativos
+                    const tagName = element.tagName.toLowerCase();
+                    const className = element.className || '';
+                    
+                    // Excluir títulos e headers
+                    if (tagName.match(/^h[1-6]$/i) || 
+                        className.includes('panel-title') ||
+                        element.classList.contains('panel-title')) {
+                        return;
+                    }
+                    
+                    // Excluir labels (apenas inputs serão numerados)
+                    if (tagName === 'label') {
+                        return;
+                    }
+                    
+                    // Excluir mensagens de validação
+                    if (tagName === 'ng-messages' || className.includes('ng-message')) {
+                        return;
+                    }
+                    
+                    // Excluir separadores decorativos
+                    if (className.includes('line') && className.includes('dashed')) {
+                        return;
+                    }
+                    
+                    // Excluir ícones decorativos (sem interação)
+                    if (tagName === 'i' && !element.hasAttribute('ng-click')) {
+                        return;
+                    }
+                    
+                    // Excluir botões individuais dentro do panel-heading
+                    // (os botões são parte do elemento 3, não devem ser numerados individualmente)
+                    if (tagName === 'button' && element.closest('.panel-heading')) {
+                        return;
+                    }
+                    
+                    // Excluir form-groups que são apenas containers
+                    if (tagName === 'div' && className.includes('form-group') && 
+                        !element.querySelector('input[ng-model], select[ng-model], textarea[ng-model]')) {
+                        return;
+                    }
+                    
                     foundElements.add(element);
                     
                     const elementSelector = generateSelector(element);
                     const label = getLabelText(element);
-                    const tagName = element.tagName.toLowerCase();
                     
                     // Determine element type
                     let type = tagName;
                     if (tagName === 'input') {
                         type = element.getAttribute('type') || 'text';
-                    } else if (element.hasAttribute('ng-click')) {
-                        type = 'clickable';
-                    } else if (element.hasAttribute('uib-dropdown')) {
-                        type = 'dropdown';
                     } else if (element.hasAttribute('ui-sortable')) {
                         type = 'sortable';
-                    } else if (element.classList.contains('panel-heading')) {
-                        type = 'panel-heading';
-                    } else if (element.classList.contains('form-group')) {
-                        type = 'form-group';
                     }
                     
                     results.push({
@@ -160,7 +181,7 @@ export async function detectElements(page) {
                         name: element.getAttribute('name') || '',
                         id: element.getAttribute('id') || '',
                         ngModel: element.getAttribute('ng-model') || '',
-                        className: element.className || ''
+                        className: className
                     });
                 });
             } catch (e) {
@@ -176,6 +197,7 @@ export async function detectElements(page) {
 
 /**
  * Filter and prioritize elements for numbering
+ * Only include editable elements related to database attributes that are documented
  * @param {Array} elements - Array of detected elements
  * @returns {Array} Filtered and prioritized elements
  */
@@ -183,17 +205,51 @@ export function filterElements(elements) {
     const filtered = [];
     const seen = new Set();
     
+    // Campos conhecidos da tabela pay_modelo_pagamento que são documentados
+    const dbFields = ['codigo', 'modelo', 'ativo', 'formula'];
+    
     elements.forEach(el => {
         // Skip if selector already seen
         if (seen.has(el.selector)) {
             return;
         }
         
-        // Skip pure container elements that don't have direct interaction
-        // form-group elements are already filtered in detection (only those with inputs/selects/buttons)
+        // CRITÉRIO 1: ng-model vinculado a record.* (atributo da base de dados)
+        if (el.ngModel && el.ngModel.startsWith('record.')) {
+            const fieldName = el.ngModel.replace('record.', '');
+            if (dbFields.includes(fieldName)) {
+                // Verificar se é um elemento editável (input, select, textarea)
+                // input inclui checkbox, radio, text, etc.
+                if (['input', 'select', 'textarea'].includes(el.tagName)) {
+                    seen.add(el.selector);
+                    filtered.push(el);
+                    return;
+                }
+            }
+        }
         
-        seen.add(el.selector);
-        filtered.push(el);
+        // CRITÉRIO 2: id ou name corresponde a campo da base de dados
+        if (el.id || el.name) {
+            const fieldName = el.id || el.name;
+            if (dbFields.includes(fieldName)) {
+                // Verificar se é um elemento editável (input inclui checkbox)
+                if (['input', 'select', 'textarea'].includes(el.tagName)) {
+                    seen.add(el.selector);
+                    filtered.push(el);
+                    return;
+                }
+            }
+        }
+        
+        // CRITÉRIO 3: Área ui-sortable com ng-model="record.formula" (área de construção de fórmula)
+        if (el.type === 'sortable' && el.ngModel === 'record.formula') {
+            seen.add(el.selector);
+            filtered.push(el);
+            return;
+        }
+        
+        // EXCLUIR: Todos os outros elementos não atendem aos critérios
+        // (não retorna, elemento é excluído)
     });
     
     return filtered;

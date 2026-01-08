@@ -195,17 +195,155 @@ async function generateFormImage(config, databaseRecord = null) {
         }
     }
     
-    // Aguardar renderização dos números
-    const waitSelector = config.renderOptions?.waitForSelector || '.element-number-badge';
-    const waitTimeout = config.renderOptions?.waitTimeout || 5000;
-    const fallbackWait = config.renderOptions?.fallbackWait || 1500;
-    
-    try {
-        await page.waitForSelector(waitSelector, { timeout: waitTimeout });
-        console.log("✅ Badges numerados renderizados");
-    } catch (e) {
-        console.log("⏳ Aguardando renderização...");
-        await new Promise(resolve => setTimeout(resolve, fallbackWait));
+    // Adicionar badges numerados DEPOIS de tudo estar processado
+    if (elements.length > 0) {
+        console.log("🔢 Adicionando badges numerados...");
+        const badgesAdded = await page.evaluate((elementsConfig) => {
+            // Remover badges existentes se houver
+            document.querySelectorAll('.element-number-badge').forEach(badge => badge.remove());
+            
+            let addedCount = 0;
+            const results = [];
+            
+            elementsConfig.forEach((element) => {
+                let el = document.querySelector(element.selector);
+                
+                // Se não encontrou, tentar alternativas
+                if (!el && element.selector.includes('ui-sortable')) {
+                    el = document.querySelector('[ui-sortable]');
+                }
+                if (!el && element.selector.includes('checkbox') && element.selector.includes('ativo')) {
+                    el = document.querySelector('input[type="checkbox"][ng-model="record.ativo"]');
+                }
+                
+                if (el) {
+                    // Encontrar o container apropriado (form-group ou o próprio elemento)
+                    let container = el;
+                    const tagName = el.tagName.toLowerCase();
+                    const isCheckbox = tagName === 'input' && el.type === 'checkbox';
+                    const isInput = tagName === 'input' || tagName === 'select' || tagName === 'textarea';
+                    
+                    // Para inputs, usar o form-group como container
+                    if (isInput && !isCheckbox) {
+                        const formGroup = el.closest('.form-group');
+                        if (formGroup) {
+                            container = formGroup;
+                        }
+                    } else if (isCheckbox) {
+                        // Para checkbox, usar o container checkbox ou form-group
+                        const checkboxContainer = el.closest('.checkbox') || el.closest('.form-group');
+                        if (checkboxContainer) {
+                            container = checkboxContainer;
+                        }
+                    }
+                    
+                    // Garantir que o container tenha position relative
+                    const containerStyle = window.getComputedStyle(container);
+                    if (containerStyle.position === 'static') {
+                        container.style.position = 'relative';
+                    }
+                    
+                    // Garantir que containers pais tenham overflow visible
+                    let parent = container.parentElement;
+                    while (parent && parent !== document.body) {
+                        const parentStyle = window.getComputedStyle(parent);
+                        if (parentStyle.overflow === 'hidden' || parentStyle.overflowY === 'hidden') {
+                            parent.style.overflow = 'visible';
+                        }
+                        parent = parent.parentElement;
+                    }
+                    
+                    const badge = document.createElement('div');
+                    badge.className = 'element-number-badge';
+                    badge.setAttribute('data-number', element.number);
+                    badge.textContent = element.number;
+                    
+                    // Use custom position if provided, otherwise use smart defaults
+                    const position = element.position || {};
+                    
+                    // Posicionar badges de forma que fiquem visíveis
+                    if (isCheckbox) {
+                        // Para checkbox, posicionar ao lado esquerdo
+                        badge.style.top = '0px';
+                        badge.style.left = '-35px';
+                        badge.style.right = 'auto';
+                        badge.style.bottom = 'auto';
+                    } else if (isInput) {
+                        // Para inputs, posicionar no canto superior direito do form-group
+                        badge.style.top = '-12px';
+                        badge.style.right = '5px';
+                        badge.style.left = 'auto';
+                        badge.style.bottom = 'auto';
+                    } else {
+                        // Para outros elementos (como ui-sortable), usar posição customizada ou padrão
+                        badge.style.top = position.top || '5px';
+                        badge.style.left = position.left || '5px';
+                        badge.style.right = position.right || 'auto';
+                        badge.style.bottom = position.bottom || 'auto';
+                    }
+                    
+                    // Garantir que o badge seja visível
+                    badge.style.display = 'flex';
+                    badge.style.alignItems = 'center';
+                    badge.style.justifyContent = 'center';
+                    badge.style.visibility = 'visible';
+                    badge.style.opacity = '1';
+                    
+                    container.appendChild(badge);
+                    addedCount++;
+                    results.push({ number: element.number, selector: element.selector, found: true, container: container.tagName });
+                } else {
+                    results.push({ number: element.number, selector: element.selector, found: false });
+                }
+            });
+            return { count: addedCount, details: results };
+        }, elements);
+        
+        console.log(`   ✅ ${badgesAdded.count} badges adicionados`);
+        badgesAdded.details.forEach(detail => {
+            if (detail.found) {
+                console.log(`      ✓ Badge ${detail.number} adicionado: ${detail.selector}`);
+            } else {
+                console.log(`      ✗ Badge ${detail.number} NÃO encontrado: ${detail.selector}`);
+            }
+        });
+        
+        // Aguardar renderização dos badges e garantir que o CSS foi aplicado
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Verificar se os badges estão visíveis e têm o CSS correto
+        const badgesInfo = await page.evaluate(() => {
+            const badges = document.querySelectorAll('.element-number-badge');
+            return Array.from(badges).map(badge => {
+                const style = window.getComputedStyle(badge);
+                const rect = badge.getBoundingClientRect();
+                return {
+                    number: badge.textContent,
+                    display: style.display,
+                    visibility: style.visibility,
+                    opacity: style.opacity,
+                    position: style.position,
+                    zIndex: style.zIndex,
+                    top: style.top,
+                    left: style.left,
+                    right: style.right,
+                    bottom: style.bottom,
+                    visible: rect.width > 0 && rect.height > 0 && style.opacity !== '0' && style.visibility !== 'hidden'
+                };
+            });
+        });
+        
+        console.log(`   ✅ ${badgesInfo.length} badges visíveis na página`);
+        if (badgesInfo.length > 0) {
+            console.log(`   📊 Verificação dos badges:`);
+            badgesInfo.forEach((info, idx) => {
+                const status = info.visible ? '✓' : '✗';
+                console.log(`      ${status} Badge ${idx + 1}: número=${info.number}, posição=${info.position}, visível=${info.visible}`);
+            });
+        }
+        
+        // Aguardar mais um pouco para garantir renderização completa
+        await new Promise(resolve => setTimeout(resolve, 500));
     }
     
     // Capturar screenshot
