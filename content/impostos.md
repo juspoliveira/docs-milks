@@ -1,5 +1,5 @@
 ---
-description: Inclusão dos diversos tipos de impostos que incidem no cálculo da folha
+description: Inclusão dos diversos tipos de impostos que incidem no cálculo da folha de pagamento
 ---
 
 # Impostos
