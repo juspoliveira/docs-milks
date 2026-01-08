@@ -198,6 +198,48 @@ node scripts/manage-site-mcp.js delete <server_id>
 
 **Nota**: Para usar os comandos acima, você precisa configurar `GITBOOK_SITE_ID` no arquivo `.env.local`.
 
+## Sincronização com GitSync
+
+Este projeto suporta sincronização bidirecional automática com o GitBook usando **GitSync**, a funcionalidade nativa do GitBook.
+
+### O que é GitSync?
+
+O GitSync permite sincronizar automaticamente o conteúdo entre o repositório GitHub e o Space do GitBook, mantendo ambos sempre atualizados.
+
+### ⚠️ Isolamento e Escopo
+
+**Importante**: A configuração do GitSync é **isolada por Space** e não afeta outros projetos:
+
+- ✅ Configurado apenas para o Space específico (`wyOmfrOj0hbYJWKsVGBS` - Documentação - Milks Pay)
+- ✅ Não afeta outros Spaces na organização
+- ✅ Não afeta outros repositórios GitHub
+- ✅ Outros projetos continuam permitindo edições online normalmente
+
+### Configuração
+
+1. **Valide a estrutura** antes de configurar:
+   ```bash
+   node scripts/validate-gitsync.js
+   ```
+
+2. **Siga o guia completo**: Consulte [GITSYNC.md](GITSYNC.md) para instruções detalhadas passo a passo.
+
+### Diferenças: GitSync vs Scripts Manuais
+
+| Aspecto | GitSync | Scripts Manuais |
+|---------|---------|------------------|
+| **Sincronização** | Automática e bidirecional | Manual, via API |
+| **Edições online** | Desabilitadas (apenas neste Space) | Permanecem habilitadas |
+| **Configuração** | Uma vez, via interface | Requer scripts e API |
+| **Isolamento** | Por Space (automático) | Por script/configuração |
+
+### Quando Usar Cada Método
+
+- **Use GitSync se**: Você quer sincronização automática e bidirecional, e não precisa editar online no GitBook
+- **Use Scripts Manuais se**: Você precisa manter edições online habilitadas ou quer mais controle sobre o processo
+
+**Documentação completa**: [GITSYNC.md](GITSYNC.md)
+
 ## Próximos Passos
 
 1. Configure as credenciais no arquivo `.env.local`:
@@ -208,4 +250,5 @@ node scripts/manage-site-mcp.js delete <server_id>
 2. Instale as dependências do servidor MCP: `cd gitbook-mcp && npm install && npm run build`
 3. Configure o servidor MCP no seu assistente de IA preferido
 4. (Opcional) Configure Site MCP Servers para seu Docs Site: veja [SITE_MCP_SERVERS.md](SITE_MCP_SERVERS.md)
-5. Comece a usar as ferramentas MCP para acessar e ajustar o manual do módulo Pay
+5. (Opcional) Configure GitSync para sincronização automática: veja [GITSYNC.md](GITSYNC.md)
+6. Comece a usar as ferramentas MCP para acessar e ajustar o manual do módulo Pay

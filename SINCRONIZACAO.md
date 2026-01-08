@@ -1,6 +1,25 @@
 # Guia de Sincronização GitBook
 
-Este documento explica como sincronizar o conteúdo do GitBook para arquivos locais.
+Este documento explica como sincronizar o conteúdo do GitBook para arquivos locais usando scripts manuais.
+
+## Métodos de Sincronização
+
+Este projeto oferece duas formas de sincronizar com o GitBook:
+
+1. **GitSync (Recomendado)**: Sincronização automática e bidirecional usando a funcionalidade nativa do GitBook
+   - ✅ Sincronização automática
+   - ✅ Bidirecional (GitHub ↔ GitBook)
+   - ✅ Configuração uma vez
+   - ⚠️ Desabilita edições online (apenas no Space configurado)
+   - 📖 **Documentação**: [GITSYNC.md](GITSYNC.md)
+
+2. **Scripts Manuais (Este guia)**: Sincronização manual usando scripts e API do GitBook
+   - ✅ Mantém edições online habilitadas
+   - ✅ Controle total sobre o processo
+   - ⚠️ Requer execução manual
+   - ⚠️ Sincronização unidirecional (GitBook → Local)
+
+**Escolha o método que melhor se adequa ao seu fluxo de trabalho.**
 
 ## Visão Geral
 
@@ -191,15 +210,33 @@ Algumas páginas podem ter conteúdo em formato "document" que precisa ser conve
 
 O arquivo `SUMMARY.md` foi atualizado para incluir todas as páginas sincronizadas. Ele referencia os arquivos em `content/` mantendo a ordem original do GitBook.
 
+## Quando Usar Scripts Manuais vs GitSync
+
+### Use Scripts Manuais quando:
+- ✅ Você precisa manter edições online habilitadas no GitBook
+- ✅ Você quer controle total sobre quando sincronizar
+- ✅ Você precisa sincronizar apenas em uma direção (GitBook → Local)
+- ✅ Você quer usar a API do GitBook diretamente
+
+### Use GitSync quando:
+- ✅ Você quer sincronização automática e bidirecional
+- ✅ Você não precisa editar online no GitBook (apenas no Space configurado)
+- ✅ Você quer uma solução mais simples e integrada
+- ✅ Você quer que mudanças no GitHub sejam automaticamente refletidas no GitBook
+
+**Nota**: O GitSync é configurado por Space e não afeta outros projetos. Veja [GITSYNC.md](GITSYNC.md) para mais informações sobre isolamento.
+
 ## Próximos Passos
 
-1. **Sincronização Automática**: Configure um cron job ou GitHub Action para sincronizar periodicamente
-2. **Validação**: Adicione validação de formato Markdown
-3. **Imagens**: Implemente download de imagens anexas (se necessário)
-4. **Diff**: Adicione funcionalidade para mostrar diferenças entre versões
+1. **Considerar GitSync**: Se você não precisa de edições online, considere usar [GitSync](GITSYNC.md) para sincronização automática
+2. **Sincronização Automática**: Configure um cron job ou GitHub Action para sincronizar periodicamente
+3. **Validação**: Adicione validação de formato Markdown
+4. **Imagens**: Implemente download de imagens anexas (se necessário)
+5. **Diff**: Adicione funcionalidade para mostrar diferenças entre versões
 
 ## Referências
 
+- [GITSYNC.md](GITSYNC.md) - Configuração do GitSync (sincronização automática)
 - [GitBook API Documentation](https://api.gitbook.com/openapi.json)
 - [CONFIGURACAO_COMPLETA.md](CONFIGURACAO_COMPLETA.md) - Configuração do projeto
 - [README.md](README.md) - Visão geral do projeto
