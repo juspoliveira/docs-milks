@@ -7,6 +7,19 @@
  * NOTA: Este script agora é um wrapper que usa o script genérico.
  * Use o script genérico diretamente para mais flexibilidade:
  *   node scripts/generate-form-image.js --config content-metadata/modelos-de-pagamento-image-config.json
+ * 
+ * NOTA SOBRE DOCUMENTAÇÃO DE IMAGENS:
+ * As notas sobre imagens geradas nos arquivos .md devem ser simples e descritivas,
+ * apenas informando o que é a tela, sem detalhes técnicos. Exemplo:
+ * "> **Nota**: Tela de cadastro e edição de modelos de pagamento com os campos principais numerados para referência."
+ * 
+ * NÃO incluir:
+ * - Menção à geração automática
+ * - Origem dos dados (banco de dados, etc.)
+ * - Comandos de execução
+ * - Requisitos técnicos (Puppeteer, npm, etc.)
+ * - Detalhes de sincronização (GitSync, etc.)
+ * - Instruções de regeneração
  */
 
 import { spawn } from "child_process";

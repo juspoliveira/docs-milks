@@ -13,11 +13,7 @@ Os modelos de pagamento definem as fórmulas de cálculo utilizadas para determi
   <figcaption>Tela de modelos de pagamento do módulo Pay</figcaption>
 </figure>
 
-> **Nota**: A imagem acima foi gerada automaticamente com bullets numerados e dados reais do banco de dados (conta_id = 40001). Para regenerar a imagem, execute:
-> ```bash
-> node scripts/generate-form-image.js --config content-metadata/modelos-de-pagamento-image-config.json
-> ```
-> O script requer Puppeteer instalado (`npm install puppeteer`). A imagem é processada automaticamente pelo GitBook quando sincronizada via GitSync.
+> **Nota**: Tela de cadastro e edição de modelos de pagamento com os campos principais numerados para referência.
 
 ## Descrição dos Elementos
 
