@@ -1,0 +1,153 @@
+{
+  "pageName": "contratos-e-vigencias",
+  "title": "Contrato",
+  "description": "Formulário de contratos e vigências",
+  "htmlPath": "/Applications/MAMP/htdocs/milks/web/src/secure/pay/contrato/views/contrato.tab.html",
+  "outputImage": "content/contrato-form.png",
+  "autoDetectElements": true,
+  "autoUpdateConfig": false,
+  "database": {
+    "enabled": true,
+    "table": "pay_contrato",
+    "contaId": 40001,
+    "where": "dt_exclusao IS NULL",
+    "orderBy": "id DESC",
+    "limit": 1,
+    "dataFile": "content-metadata/contratos-e-vigencias-data.json"
+  },
+  "fillData": {
+    "enabled": true,
+    "mappings": {
+      "#codigo": {
+        "field": "codigo",
+        "type": "text"
+      },
+      "#produtor": {
+        "field": "produtor_id",
+        "type": "select"
+      },
+      "#fazenda": {
+        "field": "fazenda_id",
+        "type": "select"
+      },
+      "#ctprincipal": {
+        "field": "contrato_principal_id",
+        "type": "select"
+      },
+      "#versao": {
+        "field": "versao_id",
+        "type": "select"
+      },
+      "#modelo": {
+        "field": "modelo_pagamento_id",
+        "type": "select"
+      },
+      "#dt_inicio": {
+        "field": "vigencia_inicio",
+        "type": "date"
+      },
+      "#dt_fim": {
+        "field": "vigencia_fim",
+        "type": "date"
+      },
+      "#distancia_pagto_logistica": {
+        "field": "distancia_pagto_logistica",
+        "type": "number"
+      },
+      "#acordo": {
+        "field": "adicional_acordo",
+        "type": "number"
+      },
+      "#tipo": {
+        "field": "tipo_bonus_volume",
+        "type": "select"
+      },
+      "#tanque": {
+        "field": "tanque_id",
+        "type": "select"
+      },
+      "#cooperativa": {
+        "field": "cooperativa_id",
+        "type": "select"
+      },
+      "input[type='checkbox'][ng-model='record.substituir_producao_por_bonus_volume']": {
+        "field": "substituir_producao_por_bonus_volume",
+        "type": "checkbox",
+        "trueValue": 1,
+        "falseValue": 0
+      },
+      "#emissao_nfe": {
+        "field": "emissao_nfe",
+        "type": "select"
+      },
+      "#meio_pagamento": {
+        "field": "meio_pagamento",
+        "type": "select"
+      },
+      "#banco": {
+        "field": "banco",
+        "type": "text"
+      },
+      "#agencia": {
+        "field": "agencia",
+        "type": "text"
+      },
+      "#conta": {
+        "field": "conta",
+        "type": "text"
+      },
+      "#tipo_conta": {
+        "field": "tipo_conta",
+        "type": "select"
+      },
+      "#beneficiario": {
+        "field": "beneficiario",
+        "type": "select"
+      },
+      "#nomeBeneficiario": {
+        "field": "nome_beneficiario",
+        "type": "text"
+      },
+      "#cpf": {
+        "field": "cpf_beneficiario",
+        "type": "text"
+      },
+      "input[type='checkbox'][ng-model='record.possui_gestao']": {
+        "field": "possui_gestao",
+        "type": "checkbox",
+        "trueValue": 1,
+        "falseValue": 0
+      },
+      "#tipo_gestao": {
+        "field": "tipo_bonus_gestao",
+        "type": "select"
+      },
+      "#tanque_gestao": {
+        "field": "gestao_tanque_id",
+        "type": "select"
+      },
+      "#cooperativa_gestao": {
+        "field": "gestao_cooperativa_id",
+        "type": "select"
+      },
+      "input[type='checkbox'][ng-model='record.utiliza_volume_informado']": {
+        "field": "utiliza_volume_informado",
+        "type": "checkbox",
+        "trueValue": 1,
+        "falseValue": 0
+      }
+    }
+  },
+  "renderOptions": {
+    "viewport": {
+      "width": 1200,
+      "height": 800,
+      "deviceScaleFactor": 2
+    },
+    "waitForSelector": ".element-number-badge",
+    "waitTimeout": 5000,
+    "fallbackWait": 1500
+  },
+  "customStyles": ""
+}
+

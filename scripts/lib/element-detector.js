@@ -89,6 +89,10 @@ export async function detectElements(page) {
             'input[ng-model^="record."]',
             // Selects with ng-model linked to record
             'select[ng-model^="record."]',
+            // Select2 elements (custom select components)
+            'select2[ng-model^="record."]',
+            // Any element with ng-model linked to record (for custom components)
+            '[ng-model^="record."]',
             // Textareas with ng-model linked to record
             'textarea[ng-model^="record."]',
             // Area for formula construction
@@ -156,7 +160,15 @@ export async function detectElements(page) {
                     
                     // Excluir form-groups que são apenas containers
                     if (tagName === 'div' && className.includes('form-group') && 
-                        !element.querySelector('input[ng-model], select[ng-model], textarea[ng-model]')) {
+                        !element.querySelector('input[ng-model], select[ng-model], textarea[ng-model], select2[ng-model]')) {
+                        return;
+                    }
+                    
+                    // Excluir spans e divs que não são elementos editáveis diretos
+                    // (mas manter select2 que é um componente customizado)
+                    if ((tagName === 'span' || tagName === 'div') && 
+                        !element.hasAttribute('ng-model') && 
+                        tagName !== 'select2') {
                         return;
                     }
                     
@@ -169,6 +181,8 @@ export async function detectElements(page) {
                     let type = tagName;
                     if (tagName === 'input') {
                         type = element.getAttribute('type') || 'text';
+                    } else if (tagName === 'select2') {
+                        type = 'select';
                     } else if (element.hasAttribute('ui-sortable')) {
                         type = 'sortable';
                     }
@@ -205,8 +219,52 @@ export function filterElements(elements) {
     const filtered = [];
     const seen = new Set();
     
-    // Campos conhecidos da tabela pay_modelo_pagamento que são documentados
-    const dbFields = ['codigo', 'modelo', 'ativo', 'formula'];
+    // Campos conhecidos das tabelas que são documentados
+    // pay_modelo_pagamento
+    const modeloPagamentoFields = ['codigo', 'modelo', 'ativo', 'formula'];
+    // pay_contrato
+    const contratoFields = [
+        'codigo', 'produtor_id', 'fazenda_id', 'contrato_principal_id', 
+        'versao_id', 'modelo_pagamento_id', 'vigencia_inicio', 'vigencia_fim',
+        'distancia_pagto_logistica', 'adicional_acordo', 'tipo_bonus_volume',
+        'tanque_id', 'cooperativa_id', 'substituir_producao_por_bonus_volume',
+        'emissao_nfe', 'meio_pagamento', 'banco', 'agencia', 'conta', 'tipo_conta',
+        'beneficiario', 'nome_beneficiario', 'cpf_beneficiario',
+        'possui_gestao', 'tipo_bonus_gestao', 'gestao_tanque_id', 'gestao_cooperativa_id',
+        'utiliza_volume_informado'
+    ];
+    
+    // Mapeamento de IDs/names do HTML para campos da base
+    const idToFieldMap = {
+        'codigo': 'codigo',
+        'produtor': 'produtor_id',
+        'fazenda': 'fazenda_id',
+        'ctprincipal': 'contrato_principal_id',
+        'versao': 'versao_id',
+        'modelo': 'modelo_pagamento_id',
+        'dt_inicio': 'vigencia_inicio',
+        'dt_fim': 'vigencia_fim',
+        'distancia_pagto_logistica': 'distancia_pagto_logistica',
+        'acordo': 'adicional_acordo',
+        'tipo': 'tipo_bonus_volume',
+        'tanque': 'tanque_id',
+        'cooperativa': 'cooperativa_id',
+        'emissao_nfe': 'emissao_nfe',
+        'meio_pagamento': 'meio_pagamento',
+        'banco': 'banco',
+        'agencia': 'agencia',
+        'conta': 'conta',
+        'tipo_conta': 'tipo_conta',
+        'beneficiario': 'beneficiario',
+        'nomeBeneficiario': 'nome_beneficiario',
+        'cpf': 'cpf_beneficiario',
+        'tipo_gestao': 'tipo_bonus_gestao',
+        'tanque_gestao': 'gestao_tanque_id',
+        'cooperativa_gestao': 'gestao_cooperativa_id'
+    };
+    
+    // Combinar todos os campos
+    const allDbFields = [...new Set([...modeloPagamentoFields, ...contratoFields])];
     
     elements.forEach(el => {
         // Skip if selector already seen
@@ -217,10 +275,10 @@ export function filterElements(elements) {
         // CRITÉRIO 1: ng-model vinculado a record.* (atributo da base de dados)
         if (el.ngModel && el.ngModel.startsWith('record.')) {
             const fieldName = el.ngModel.replace('record.', '');
-            if (dbFields.includes(fieldName)) {
-                // Verificar se é um elemento editável (input, select, textarea)
+            if (allDbFields.includes(fieldName)) {
+                // Verificar se é um elemento editável (input, select, select2, textarea)
                 // input inclui checkbox, radio, text, etc.
-                if (['input', 'select', 'textarea'].includes(el.tagName)) {
+                if (['input', 'select', 'select2', 'textarea'].includes(el.tagName)) {
                     seen.add(el.selector);
                     filtered.push(el);
                     return;
@@ -228,12 +286,20 @@ export function filterElements(elements) {
             }
         }
         
-        // CRITÉRIO 2: id ou name corresponde a campo da base de dados
+        // CRITÉRIO 2: id ou name corresponde a campo da base de dados (via mapeamento)
         if (el.id || el.name) {
-            const fieldName = el.id || el.name;
-            if (dbFields.includes(fieldName)) {
-                // Verificar se é um elemento editável (input inclui checkbox)
-                if (['input', 'select', 'textarea'].includes(el.tagName)) {
+            const htmlId = el.id || el.name;
+            // Verificar mapeamento direto
+            if (idToFieldMap[htmlId] && allDbFields.includes(idToFieldMap[htmlId])) {
+                if (['input', 'select', 'select2', 'textarea'].includes(el.tagName)) {
+                    seen.add(el.selector);
+                    filtered.push(el);
+                    return;
+                }
+            }
+            // Verificar se o id/name corresponde diretamente a um campo
+            if (allDbFields.includes(htmlId)) {
+                if (['input', 'select', 'select2', 'textarea'].includes(el.tagName)) {
                     seen.add(el.selector);
                     filtered.push(el);
                     return;
@@ -246,6 +312,16 @@ export function filterElements(elements) {
             seen.add(el.selector);
             filtered.push(el);
             return;
+        }
+        
+        // CRITÉRIO 4: Checkboxes com ng-model relacionado a campos da base
+        if (el.tagName === 'input' && el.type === 'checkbox' && el.ngModel) {
+            const fieldName = el.ngModel.replace('record.', '');
+            if (allDbFields.includes(fieldName)) {
+                seen.add(el.selector);
+                filtered.push(el);
+                return;
+            }
         }
         
         // EXCLUIR: Todos os outros elementos não atendem aos critérios
