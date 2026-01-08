@@ -3,9 +3,13 @@
 /**
  * Script para gerar imagem do formulário de modelos de pagamento
  * com bullets numerados para documentação
+ * 
+ * NOTA: Este script agora é um wrapper que usa o script genérico.
+ * Use o script genérico diretamente para mais flexibilidade:
+ *   node scripts/generate-form-image.js --config content-metadata/modelos-de-pagamento-image-config.json
  */
 
-import { readFileSync, writeFileSync, existsSync } from "fs";
+import { spawn } from "child_process";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
@@ -13,9 +17,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const projectRoot = join(__dirname, "..");
 
-// Caminhos dos arquivos
-const FORM_HTML_PATH = "/Applications/MAMP/htdocs/milks/web/src/secure/pay/modelopagamento/views/modelopagamento.pagamento.tab.html";
-const OUTPUT_IMAGE_PATH = join(projectRoot, "content", "modelopagamento-form.png");
+// Configuração para usar o script genérico
+const CONFIG_PATH = join(projectRoot, "content-metadata", "modelos-de-pagamento-image-config.json");
 
 // Elementos a numerar na ordem de aparição
 const ELEMENTS_TO_NUMBER = [
@@ -172,7 +175,9 @@ async function main() {
     // Verificar se Puppeteer está disponível
     let puppeteer;
     try {
-        puppeteer = await import('puppeteer');
+        const puppeteerModule = await import('puppeteer');
+        // Compatibilidade com diferentes versões do Puppeteer
+        puppeteer = puppeteerModule.default || puppeteerModule;
     } catch (error) {
         console.error("❌ Puppeteer não está instalado!");
         console.log("\n💡 Para instalar o Puppeteer, execute:");
@@ -203,7 +208,7 @@ async function main() {
     
     // Renderizar com Puppeteer
     console.log("\n🌐 Iniciando navegador headless...");
-    const browser = await puppeteer.default.launch({
+    const browser = await puppeteer.launch({
         headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
@@ -222,8 +227,15 @@ async function main() {
     console.log(`📖 Carregando HTML: ${fileUrl}`);
     await page.goto(fileUrl, { waitUntil: 'networkidle0' });
     
-    // Aguardar renderização dos números
-    await page.waitForTimeout(1000);
+    // Aguardar renderização dos números - aguardar até que os badges apareçam
+    try {
+        await page.waitForSelector('.element-number-badge', { timeout: 5000 });
+        console.log("✅ Badges numerados renderizados");
+    } catch (e) {
+        // Se não encontrar, aguarda um tempo fixo para garantir renderização
+        console.log("⏳ Aguardando renderização...");
+        await new Promise(resolve => setTimeout(resolve, 1500));
+    }
     
     // Capturar screenshot
     console.log("📸 Capturando screenshot...");

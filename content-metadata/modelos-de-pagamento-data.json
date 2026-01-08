@@ -1,0 +1,9 @@
+{
+  "id": 27,
+  "conta_id": 40001,
+  "codigo": "00123",
+  "modelo": "Modelo Básico",
+  "formula": "[{\"type\":\"info\",\"display\":\"(\",\"id\":\"AG\",\"edit\":true,\"composicao\":\"Leite in Natura\",\"tipoComposicao\":\"c\",\"deduzirIncentivo\":\"0\",\"exibeValorZerado\":\"1\",\"somaMontantePagamento\":\"0\"},{\"type\":\"default\",\"display\":\"Mercado - Mês atual\",\"id\":\"PB_6_C\",\"edit\":false},{\"type\":\"primary\",\"display\":\"*\",\"id\":\"MUL\",\"edit\":true},{\"type\":\"default\",\"display\":\"Volume total no período\",\"id\":\"VL_T\",\"edit\":false},{\"type\":\"info\",\"display\":\")\",\"id\":\"FG\",\"edit\":true}]",
+  "ativo": 1
+}
+

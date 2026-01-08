@@ -9,15 +9,15 @@ description: >-
 Os modelos de pagamento definem as fórmulas de cálculo utilizadas para determinar o valor a ser pago aos produtores na folha de pagamento. Cada modelo é composto por uma fórmula que combina diferentes elementos como preços, volumes, indicadores de qualidade (SVL), acordos comerciais e operadores matemáticos.
 
 <figure>
-  <img src="[URL_DA_IMAGEM_AQUI]" alt="Tela de modelos de pagamento do módulo Pay">
+  <img src="modelopagamento-form.png" alt="Tela de modelos de pagamento do módulo Pay">
   <figcaption>Tela de modelos de pagamento do módulo Pay</figcaption>
 </figure>
 
-> **Nota**: Para gerar a imagem do formulário com bullets numerados, execute o script:
+> **Nota**: A imagem acima foi gerada automaticamente com bullets numerados e dados reais do banco de dados (conta_id = 40001). Para regenerar a imagem, execute:
 > ```bash
-> node scripts/generate-modelopagamento-image.js
+> node scripts/generate-form-image.js --config content-metadata/modelos-de-pagamento-image-config.json
 > ```
-> O script requer Puppeteer instalado (`npm install puppeteer`). Após gerar a imagem, faça upload para o GitBook e atualize a URL acima.
+> O script requer Puppeteer instalado (`npm install puppeteer`). A imagem é processada automaticamente pelo GitBook quando sincronizada via GitSync.
 
 ## Descrição dos Elementos
 

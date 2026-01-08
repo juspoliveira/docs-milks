@@ -1,0 +1,102 @@
+{
+  "pageName": "modelos-de-pagamento",
+  "title": "Modelo de Pagamento",
+  "description": "Formulário de modelos de pagamento",
+  "htmlPath": "/Applications/MAMP/htdocs/milks/web/src/secure/pay/modelopagamento/views/modelopagamento.pagamento.tab.html",
+  "outputImage": "content/modelopagamento-form.png",
+  "autoDetectElements": true,
+  "autoUpdateConfig": false,
+  "database": {
+    "enabled": true,
+    "table": "pay_modelo_pagamento",
+    "contaId": 40001,
+    "where": "dt_exclusao IS NULL",
+    "orderBy": "id DESC",
+    "limit": 1,
+    "dataFile": "content-metadata/modelos-de-pagamento-data.json"
+  },
+  "elements": [
+    {
+      "selector": "#codigo",
+      "number": 1,
+      "label": "Campo Código",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "#modelo",
+      "number": 2,
+      "label": "Campo Modelo",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": ".panel-heading",
+      "number": 3,
+      "label": "Editor de Fórmula - Botões",
+      "position": {
+        "top": "5px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": ".panel-body[ui-sortable]",
+      "number": 4,
+      "label": "Área de Construção da Fórmula",
+      "position": {
+        "top": "5px",
+        "left": "5px"
+      }
+    },
+    {
+      "selector": "input[type='checkbox'][ng-model='record.ativo']",
+      "number": 5,
+      "label": "Checkbox Ativo",
+      "position": {
+        "top": "-8px",
+        "left": "20px"
+      }
+    }
+  ],
+  "fillData": {
+    "enabled": true,
+    "mappings": {
+      "#codigo": {
+        "field": "codigo",
+        "type": "text"
+      },
+      "#modelo": {
+        "field": "modelo",
+        "type": "text"
+      },
+      "input[type='checkbox'][ng-model='record.ativo']": {
+        "field": "ativo",
+        "type": "checkbox",
+        "trueValue": 1,
+        "falseValue": 0
+      }
+    },
+    "formula": {
+      "enabled": true,
+      "field": "formula",
+      "renderMethod": "json-to-visual",
+      "targetSelector": ".panel-body[ui-sortable]"
+    }
+  },
+  "renderOptions": {
+    "viewport": {
+      "width": 1200,
+      "height": 800,
+      "deviceScaleFactor": 2
+    },
+    "waitForSelector": ".element-number-badge",
+    "waitTimeout": 5000,
+    "fallbackWait": 1500
+  },
+  "customStyles": ""
+}
+
