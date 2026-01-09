@@ -1,4 +1,5 @@
-# Sumário
+
+<!-- # Sumário -->
 
 <!-- * [Introdução](README.md) -->
 
