@@ -1,0 +1,51 @@
+[
+  {
+    "contrato_id": 239,
+    "conta_id": 40001,
+    "codigo": "001",
+    "contrato_codigo": "001",
+    "adicional_acordo": 0.225,
+    "produtor_id": 193617,
+    "fazenda_id": 2251177,
+    "codigo_produtor": "0120",
+    "fazenda": "FAZENDA BELA VISTA",
+    "quantidade": 15000,
+    "previsao_coleta": 18000,
+    "media_diaria": 500,
+    "acordo_total": 3375.00,
+    "acordo_previsto": 4050.00
+  },
+  {
+    "contrato_id": 242,
+    "conta_id": 40001,
+    "codigo": "004",
+    "contrato_codigo": "004",
+    "adicional_acordo": 0.12,
+    "produtor_id": 63870,
+    "fazenda_id": null,
+    "codigo_produtor": "1149",
+    "fazenda": null,
+    "quantidade": 12000,
+    "previsao_coleta": 15000,
+    "media_diaria": 400,
+    "acordo_total": 1440.00,
+    "acordo_previsto": 1800.00
+  },
+  {
+    "contrato_id": 1442,
+    "conta_id": 40001,
+    "codigo": "2023",
+    "contrato_codigo": "2023",
+    "adicional_acordo": 0.15,
+    "produtor_id": 308025,
+    "fazenda_id": 2427592,
+    "codigo_produtor": "P-061",
+    "fazenda": "FAZENDA BOA NOVA",
+    "quantidade": 20000,
+    "previsao_coleta": 24000,
+    "media_diaria": 667,
+    "acordo_total": 3000.00,
+    "acordo_previsto": 3600.00
+  }
+]
+

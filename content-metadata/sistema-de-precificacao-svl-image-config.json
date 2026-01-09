@@ -1,0 +1,34 @@
+{
+  "pageName": "sistema-de-precificacao-svl",
+  "title": "Sistema de Precificação SVL",
+  "description": "Tela principal do Sistema de Precificação SVL",
+  "htmlPath": "/Applications/MAMP/htdocs/milks/web/src/secure/pay/precificacao/views/precificacao.menu.html",
+  "outputImage": "content/sistema-de-precificacao-svl.png",
+  "autoDetectElements": true,
+  "autoUpdateConfig": false,
+  "database": {
+    "enabled": true,
+    "table": "pay_versao_svl",
+    "contaId": 40001,
+    "where": "dt_exclusao IS NULL",
+    "orderBy": "id DESC",
+    "limit": 1,
+    "dataFile": "content-metadata/sistema-de-precificacao-svl-data.json"
+  },
+  "fillData": {
+    "enabled": false,
+    "mappings": {}
+  },
+  "renderOptions": {
+    "viewport": {
+      "width": 1400,
+      "height": 900,
+      "deviceScaleFactor": 2
+    },
+    "waitForSelector": ".element-number-badge",
+    "waitTimeout": 5000,
+    "fallbackWait": 1500
+  },
+  "customStyles": ""
+}
+

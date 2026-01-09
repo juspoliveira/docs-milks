@@ -1,0 +1,11 @@
+{
+  "id": 4,
+  "conta_id": 40001,
+  "codigo": null,
+  "descricao": "Senar",
+  "percentual": "0.2000",
+  "deduzir_base_calculo": 1,
+  "tipo_valor_base": "B",
+  "mostra_informacao_complementar": 0
+}
+

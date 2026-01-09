@@ -1,0 +1,65 @@
+{
+  "pageName": "consolidacao-de-qualidade",
+  "title": "Consolidação de Qualidade",
+  "description": "Formulário de consolidação de qualidade",
+  "htmlPath": "/Applications/MAMP/htdocs/milks/web/src/secure/pay/consolidacaoqualidade/views/consolidacao.qualidade.tab.html",
+  "outputImage": "content/consolidacao-qualidade-form.png",
+  "autoDetectElements": true,
+  "autoUpdateConfig": false,
+  "database": {
+    "enabled": true,
+    "table": "pay_consolidacao_qualidade",
+    "contaId": 40001,
+    "where": "dt_exclusao IS NULL",
+    "orderBy": "id DESC",
+    "limit": 1,
+    "dataFile": "content-metadata/consolidacao-de-qualidade-data.json"
+  },
+  "fillData": {
+    "enabled": true,
+    "mappings": {
+      "#codigo": {
+        "field": "codigo",
+        "type": "text"
+      },
+      "#descricao": {
+        "field": "descricao",
+        "type": "text"
+      },
+      "#dt_inicio": {
+        "field": "dt_inicio",
+        "type": "date"
+      },
+      "#dt_fim": {
+        "field": "dt_fim",
+        "type": "date"
+      },
+      "#competencia": {
+        "field": "competencia",
+        "type": "select"
+      },
+      "#exercicio": {
+        "field": "exercicio",
+        "type": "select"
+      },
+      "input[type='checkbox'][ng-model='record.fechado']": {
+        "field": "fechado",
+        "type": "checkbox",
+        "trueValue": 1,
+        "falseValue": 0
+      }
+    }
+  },
+  "renderOptions": {
+    "viewport": {
+      "width": 1200,
+      "height": 800,
+      "deviceScaleFactor": 2
+    },
+    "waitForSelector": ".element-number-badge",
+    "waitTimeout": 5000,
+    "fallbackWait": 1500
+  },
+  "customStyles": ""
+}
+

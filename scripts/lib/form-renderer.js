@@ -118,6 +118,10 @@ export function createFullHTML(formHTML, title = 'Formulário', elements = [], c
     <!-- Font Awesome -->
     <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
     
+    <!-- ag-Grid CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/styles/ag-theme-alpine.css">
+    
     ${NUMBER_BADGE_CSS}
     
     <style>
@@ -154,7 +158,28 @@ export function createFullHTML(formHTML, title = 'Formulário', elements = [], c
     </div>
     
     ${angularScripts}
+    <!-- ag-Grid JS -->
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/dist/ag-grid-community.min.js"></script>
     ${numberBadgeScript}
+    <script>
+        // Initialize AngularJS app if not already initialized
+        if (typeof angular !== 'undefined') {
+            document.addEventListener('DOMContentLoaded', function() {
+                // Wait a bit for AngularJS to load
+                setTimeout(function() {
+                    try {
+                        // Bootstrap if not already bootstrapped
+                        const body = document.body;
+                        if (!angular.element(body).injector()) {
+                            angular.bootstrap(body, ['pay.ajusteacordo', 'pay.modelopagamento', 'pay.consolidacaoqualidade']);
+                        }
+                    } catch (e) {
+                        console.warn('Erro ao inicializar AngularJS:', e.message);
+                    }
+                }, 100);
+            });
+        }
+    </script>
 </body>
 </html>`;
 }

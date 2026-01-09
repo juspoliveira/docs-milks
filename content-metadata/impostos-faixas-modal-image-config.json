@@ -1,0 +1,49 @@
+{
+  "pageName": "Impostos - Modal de Faixas",
+  "htmlPath": "/Applications/MAMP/htdocs/milks/web/src/secure/pay/imposto/views/imposto.faixa.modal.html",
+  "outputImage": "content/impostos-faixas-modal.png",
+  "renderOptions": {
+    "viewport": {
+      "width": 1000,
+      "height": 600,
+      "deviceScaleFactor": 2
+    }
+  },
+  "processAngularTemplates": true,
+  "autoDetectElements": false,
+  "elements": [
+    {
+      "selector": "#volume_minimo",
+      "number": 1
+    },
+    {
+      "selector": "#volume_maximo",
+      "number": 2
+    },
+    {
+      "selector": "#percentual",
+      "number": 3
+    },
+    {
+      "selector": "button[ng-click='save()']",
+      "number": 4
+    },
+    {
+      "selector": "button[ng-click='cancel()']",
+      "number": 5
+    }
+  ],
+  "database": {
+    "enabled": true,
+    "dataFile": "content-metadata/impostos-faixas-data.json"
+  },
+  "fillData": {
+    "enabled": true,
+    "mappings": {
+      "#volume_minimo": "volume_minimo",
+      "#volume_maximo": "volume_maximo",
+      "#percentual": "percentual"
+    }
+  }
+}
+

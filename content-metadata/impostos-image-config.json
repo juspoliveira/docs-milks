@@ -1,0 +1,51 @@
+{
+  "pageName": "Impostos",
+  "htmlPath": "/Applications/MAMP/htdocs/milks/web/src/secure/pay/imposto/views/imposto.tab.html",
+  "outputImage": "content/impostos-form.png",
+  "renderOptions": {
+    "viewport": {
+      "width": 1200,
+      "height": 800,
+      "deviceScaleFactor": 2
+    }
+  },
+  "processAngularTemplates": true,
+  "autoDetectElements": false,
+  "elements": [
+    {
+      "selector": "#codigo",
+      "number": 1
+    },
+    {
+      "selector": "#descricao",
+      "number": 2
+    },
+    {
+      "selector": "#deducao",
+      "number": 3
+    },
+    {
+      "selector": "#deduzir_base_calculo",
+      "number": 4
+    },
+    {
+      "selector": "#mostra_informacao_complementar",
+      "number": 5
+    }
+  ],
+  "database": {
+    "enabled": true,
+    "dataFile": "content-metadata/impostos-data.json"
+  },
+  "fillData": {
+    "enabled": true,
+    "mappings": {
+      "codigo": "codigo",
+      "descricao": "descricao",
+      "percentual": "percentual",
+      "deduzir_base_calculo": "deduzir_base_calculo",
+      "mostra_informacao_complementar": "mostra_informacao_complementar"
+    }
+  }
+}
+

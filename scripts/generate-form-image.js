@@ -26,6 +26,7 @@ import { fillFormFields, renderFormula } from "./lib/database-filler.js";
 import { detectElements, filterElements } from "./lib/element-detector.js";
 import { detectAndSortElements, generateBadgePosition } from "./lib/element-sorter.js";
 import { processAngularTemplates, injectAngularScripts } from "./lib/angular-processor.js";
+import { generateMockFaixasData } from "./lib/mock-data-generator.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -69,6 +70,17 @@ function loadDatabaseRecord(dataPath) {
     try {
         const dataContent = readFileSync(dataPath, 'utf-8');
         const data = JSON.parse(dataContent);
+        // Se for estrutura de faixas (com imposto e faixas), retornar completo
+        if (data.imposto && data.faixas) {
+            // Verificar se há faixas válidas
+            if (data.faixas.length > 0) {
+                return data;
+            }
+            // Se não houver faixas, gerar dados MOCK
+            console.log('   ⚠️  Nenhuma faixa encontrada, gerando dados MOCK...');
+            return generateMockFaixasData({ contaId: data.imposto?.conta_id || 40001 });
+        }
+        // Caso contrário, retornar primeiro elemento se for array
         return Array.isArray(data) ? data[0] : data;
     } catch (error) {
         console.warn(`Error loading database record: ${error.message}`);
@@ -103,6 +115,65 @@ async function generateFormImage(config, databaseRecord = null) {
     
     console.log(`📄 Lendo HTML do formulário: ${config.htmlPath}`);
     let formHTML = readFileSync(config.htmlPath, 'utf-8');
+    
+    // Carregar dados adicionais ANTES de processar HTML (para poder adicionar ng-controller)
+    let additionalData = {};
+    if (config.database?.enabled && config.database?.dataFile) {
+        const dataPath = resolve(projectRoot, config.database.dataFile);
+        if (existsSync(dataPath)) {
+            try {
+                const dataContent = readFileSync(dataPath, 'utf-8');
+                const data = JSON.parse(dataContent);
+                
+                // Verificar se é estrutura de faixas (com imposto e faixas) ou lista simples
+                if (data.imposto && data.faixas) {
+                    additionalData.imposto = data.imposto;
+                    additionalData.faixas = Array.isArray(data.faixas) ? data.faixas : [data.faixas];
+                    console.log(`   📊 Carregados dados do imposto "${data.imposto.descricao}" com ${additionalData.faixas.length} faixas`);
+                    
+                    // Adicionar ng-controller para faixas se não tiver (para tabela)
+                    if (!formHTML.includes('ng-controller="imposto.FaixaCtrl"') && formHTML.includes('ng-repeat="faixa in faixas"')) {
+                        // Adicionar ng-controller ao primeiro div com class wrapper-sm
+                        formHTML = formHTML.replace(/<div([^>]*class="[^"]*wrapper-sm[^"]*")/i, '<div$1 ng-controller="imposto.FaixaCtrl"');
+                        if (!formHTML.includes('ng-controller="imposto.FaixaCtrl"')) {
+                            // Se não encontrou wrapper-sm, adicionar ao primeiro div
+                            formHTML = formHTML.replace(/<div([^>]*class="[^"]*")/i, '<div$1 ng-controller="imposto.FaixaCtrl"');
+                        }
+                        console.log('   ✅ Adicionado ng-controller="imposto.FaixaCtrl"');
+                    }
+                    
+                    // Adicionar ng-controller para modal se não tiver (para modal)
+                    if (!formHTML.includes('ng-controller="imposto.FaixaModalCtrl"') && formHTML.includes('ng-model="registro.')) {
+                        // Adicionar ng-controller ao form ou primeiro elemento
+                        if (formHTML.includes('<form')) {
+                            formHTML = formHTML.replace(/<form([^>]*name="forms\.modal")/i, '<form$1 ng-controller="imposto.FaixaModalCtrl"');
+                        } else {
+                            formHTML = formHTML.replace(/<div([^>]*class="[^"]*modal-body[^"]*")/i, '<div$1 ng-controller="imposto.FaixaModalCtrl"');
+                        }
+                        console.log('   ✅ Adicionado ng-controller="imposto.FaixaModalCtrl"');
+                    }
+                } else {
+                    // Estrutura de lista simples (records)
+                    additionalData.records = Array.isArray(data) ? data : [data];
+                    console.log(`   📊 Carregados ${additionalData.records.length} registros do arquivo de dados`);
+                    
+                    // Adicionar ng-controller diretamente no HTML se houver dados
+                    if (additionalData.records.length > 0 && formHTML.includes('ng-repeat="record in records')) {
+                        // Adicionar ng-controller ao elemento sng-page ou sng-content
+                        if (formHTML.includes('<sng-page>') && !formHTML.includes('ng-controller')) {
+                            formHTML = formHTML.replace('<sng-page>', '<sng-page ng-controller="ajusteacordo.AcordoListCtrl">');
+                            console.log('   ✅ Adicionado ng-controller="ajusteacordo.AcordoListCtrl" ao sng-page');
+                        } else if (formHTML.includes('<sng-content>') && !formHTML.includes('ng-controller')) {
+                            formHTML = formHTML.replace('<sng-content>', '<sng-content ng-controller="ajusteacordo.AcordoListCtrl">');
+                            console.log('   ✅ Adicionado ng-controller="ajusteacordo.AcordoListCtrl" ao sng-content');
+                        }
+                    }
+                }
+            } catch (error) {
+                console.warn(`Erro ao carregar dados: ${error.message}`);
+            }
+        }
+    }
     
     // Verificar se HTML contém templates AngularJS
     const hasAngularTemplates = formHTML.includes('{{') || 
@@ -141,11 +212,127 @@ async function generateFormImage(config, databaseRecord = null) {
     console.log(`📖 Carregando HTML: ${fileUrl}`);
     await page.goto(fileUrl, { waitUntil: 'networkidle0' });
     
+    // additionalData já foi carregado acima
+    
     // Processar templates AngularJS se necessário
     if (hasAngularTemplates && includeAngular) {
-        await processAngularTemplates(page);
+        await processAngularTemplates(page, additionalData);
         // Aguardar um pouco mais para garantir renderização completa
         await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Verificar se as interpolações foram resolvidas
+        const interpolationCheck = await page.evaluate(() => {
+            const body = document.body;
+            const injector = angular.element(body).injector();
+            if (!injector) return { success: false, reason: 'No injector' };
+            
+            const faixaElements = document.querySelectorAll('[ng-controller="imposto.FaixaCtrl"]');
+            const results = [];
+            
+            faixaElements.forEach(element => {
+                try {
+                    const scope = angular.element(element).scope();
+                    if (scope) {
+                        const hasRecord = scope.record && scope.record.descricao;
+                        const hasFaixas = scope.faixas && scope.faixas.length > 0;
+                        const recordDesc = scope.record ? scope.record.descricao : 'N/A';
+                        const faixasCount = scope.faixas ? scope.faixas.length : 0;
+                        
+                        results.push({
+                            hasRecord,
+                            hasFaixas,
+                            recordDesc,
+                            faixasCount
+                        });
+                    }
+                } catch (e) {
+                    results.push({ error: e.message });
+                }
+            });
+            
+            // Check if interpolations are resolved by checking actual rendered content
+            const textContent = document.body.textContent || '';
+            const innerHTML = document.body.innerHTML || '';
+            const hasUnresolved = textContent.includes('{{record.') || textContent.includes('{{faixa.') || 
+                                 innerHTML.includes('{{record.') || innerHTML.includes('{{faixa.');
+            
+            // Check specific elements that should have data
+            const titleElement = document.querySelector('.h4');
+            const titleText = titleElement ? titleElement.textContent : '';
+            const hasTitleData = titleText && !titleText.includes('{{record.');
+            
+            const tableRows = document.querySelectorAll('tbody tr[ng-repeat]');
+            const hasTableData = tableRows.length > 0;
+            const firstRowText = tableRows.length > 0 ? tableRows[0].textContent : '';
+            const hasRowData = firstRowText && !firstRowText.includes('{{faixa.');
+            
+            return {
+                success: results.length > 0 && results.every(r => r.hasRecord && r.hasFaixas),
+                hasUnresolved,
+                hasTitleData,
+                hasTableData,
+                hasRowData,
+                titleText: titleText.substring(0, 100),
+                firstRowText: firstRowText.substring(0, 100),
+                results
+            };
+        });
+        
+        if (interpolationCheck.hasUnresolved || !interpolationCheck.success || !interpolationCheck.hasTitleData || !interpolationCheck.hasRowData) {
+            console.log('⚠️  Interpolações não resolvidas, tentando novamente...');
+            console.log('   Verificação detalhada:');
+            console.log('   - Scope OK:', interpolationCheck.success);
+            console.log('   - Título renderizado:', interpolationCheck.hasTitleData, interpolationCheck.titleText);
+            console.log('   - Linhas da tabela:', interpolationCheck.hasTableData);
+            console.log('   - Dados nas linhas:', interpolationCheck.hasRowData, interpolationCheck.firstRowText);
+            console.log('   - Interpolações não resolvidas:', interpolationCheck.hasUnresolved);
+            
+            // Force re-application of data
+            await page.evaluate((additionalData) => {
+                const body = document.body;
+                const injector = angular.element(body).injector();
+                if (injector) {
+                    const $rootScope = injector.get('$rootScope');
+                    const $compile = injector.get('$compile');
+                    
+                    if (additionalData && additionalData.faixas) {
+                        const faixaElements = document.querySelectorAll('[ng-controller="imposto.FaixaCtrl"]');
+                        faixaElements.forEach(element => {
+                            try {
+                                const scope = angular.element(element).scope();
+                                if (scope) {
+                                    scope.faixas = JSON.parse(JSON.stringify(additionalData.faixas));
+                                    if (additionalData.imposto) {
+                                        scope.record = JSON.parse(JSON.stringify(additionalData.imposto));
+                                    }
+                                    scope.viewState = 'edit';
+                                    
+                                    // Force re-compilation
+                                    if ($compile) {
+                                        const compiled = $compile(element)(scope);
+                                    }
+                                    
+                                    if (!scope.$$phase && !scope.$root.$$phase) {
+                                        scope.$apply();
+                                    }
+                                }
+                            } catch (e) {
+                                console.warn('Erro:', e.message);
+                            }
+                        });
+                        
+                        if ($rootScope) {
+                            $rootScope.$apply();
+                        }
+                    }
+                }
+            }, additionalData);
+            
+            // Wait for rendering
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        } else {
+            console.log('✅ Interpolações resolvidas corretamente');
+        }
     }
     
     // Detectar elementos automaticamente se configurado
@@ -190,7 +377,7 @@ async function generateFormImage(config, databaseRecord = null) {
         
         // Processar templates AngularJS novamente após recarregar
         if (hasAngularTemplates && includeAngular) {
-            await processAngularTemplates(page);
+            await processAngularTemplates(page, additionalData);
             await new Promise(resolve => setTimeout(resolve, 500));
         }
     }
@@ -198,7 +385,12 @@ async function generateFormImage(config, databaseRecord = null) {
     // Preencher formulário com dados do banco se disponível
     if (databaseRecord && config.fillData?.enabled) {
         console.log("📝 Preenchendo formulário com dados do banco...");
-        await fillFormFields(page, databaseRecord, config.fillData.mappings || {});
+        // Se for estrutura de faixas, usar a primeira faixa para preencher o modal
+        let recordToFill = databaseRecord;
+        if (databaseRecord.faixas && databaseRecord.faixas.length > 0) {
+            recordToFill = databaseRecord.faixas[0];
+        }
+        await fillFormFields(page, recordToFill, config.fillData.mappings || {});
         
         // Renderizar fórmula se configurado
         if (config.fillData.formula?.enabled && databaseRecord[config.fillData.formula.field]) {
@@ -357,6 +549,263 @@ async function generateFormImage(config, databaseRecord = null) {
         
         // Aguardar mais um pouco para garantir renderização completa
         await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Verificação final antes do screenshot
+        if (hasAngularTemplates && includeAngular) {
+            const finalCheck = await page.evaluate(() => {
+                const body = document.body;
+                const textContent = body.textContent || '';
+                const innerHTML = body.innerHTML || '';
+                
+                // Check for unresolved interpolations
+                const hasUnresolved = textContent.includes('{{record.') || textContent.includes('{{faixa.') || 
+                                     innerHTML.includes('{{record.') || innerHTML.includes('{{faixa.');
+                
+                // Check specific rendered content
+                const titleEl = document.querySelector('.h4');
+                const titleText = titleEl ? titleEl.textContent.trim() : '';
+                const titleHasData = titleText && titleText.length > 0 && !titleText.includes('{{');
+                
+                const tableRows = document.querySelectorAll('tbody tr');
+                const hasRows = tableRows.length > 0;
+                let rowHasData = false;
+                if (hasRows) {
+                    const firstRow = tableRows[0];
+                    const rowText = firstRow.textContent || '';
+                    rowHasData = rowText.length > 0 && !rowText.includes('{{') && !rowText.includes('Nenhuma faixa');
+                }
+                
+                return {
+                    hasUnresolved,
+                    titleHasData,
+                    titleText: titleText.substring(0, 150),
+                    hasRows,
+                    rowHasData,
+                    rowCount: tableRows.length
+                };
+            });
+            
+            if (finalCheck.hasUnresolved || !finalCheck.titleHasData || !finalCheck.rowHasData) {
+                console.log('⚠️  Verificação final detectou problemas:');
+                console.log('   - Interpolações não resolvidas:', finalCheck.hasUnresolved);
+                console.log('   - Título com dados:', finalCheck.titleHasData, '| Texto:', finalCheck.titleText);
+                console.log('   - Linhas na tabela:', finalCheck.hasRows, '| Contagem:', finalCheck.rowCount);
+                console.log('   - Linhas com dados:', finalCheck.rowHasData);
+                
+                // Force one more application with aggressive re-compilation
+                await page.evaluate((additionalData) => {
+                    const body = document.body;
+                    const injector = angular.element(body).injector();
+                    if (injector) {
+                        const $rootScope = injector.get('$rootScope');
+                        const $compile = injector.get('$compile');
+                        
+                        if (additionalData && additionalData.faixas) {
+                            // Find all controller elements
+                            const elements = document.querySelectorAll('[ng-controller="imposto.FaixaCtrl"]');
+                            elements.forEach(el => {
+                                const scope = angular.element(el).scope();
+                                if (scope) {
+                                    // Deep clone data
+                                    scope.faixas = JSON.parse(JSON.stringify(additionalData.faixas));
+                                    if (additionalData.imposto) {
+                                        scope.record = JSON.parse(JSON.stringify(additionalData.imposto));
+                                    }
+                                    scope.viewState = 'edit';
+                                    
+                                    // Find and re-compile ng-repeat elements
+                                    const repeatElements = el.querySelectorAll('[ng-repeat*="faixa in faixas"]');
+                                    repeatElements.forEach(repeatEl => {
+                                        const repeatScope = angular.element(repeatEl).scope();
+                                        if (repeatScope && repeatScope.$parent) {
+                                            repeatScope.$parent.faixas = scope.faixas;
+                                            repeatScope.$parent.record = scope.record;
+                                            repeatScope.$parent.viewState = 'edit';
+                                        }
+                                    });
+                                    
+                                    // Re-compile entire controller element
+                                    if ($compile) {
+                                        // Remove old compiled content markers
+                                        el.removeAttribute('ng-scope');
+                                        // Re-compile
+                                        $compile(el)(scope);
+                                    }
+                                    
+                                    // Force digest
+                                    if (!scope.$$phase && !scope.$root.$$phase) {
+                                        scope.$apply();
+                                    }
+                                    
+                                    // Also force digest on parent scopes
+                                    let parentScope = scope.$parent;
+                                    while (parentScope && parentScope !== scope.$root) {
+                                        if (!parentScope.$$phase) {
+                                            parentScope.$apply();
+                                        }
+                                        parentScope = parentScope.$parent;
+                                    }
+                                }
+                            });
+                            
+                            // Force root scope digest
+                            if ($rootScope && !$rootScope.$$phase) {
+                                $rootScope.$apply();
+                            }
+                            
+                            // Wait a bit for Angular to process
+                            return true;
+                        }
+                    }
+                    return false;
+                }, additionalData);
+                
+                await new Promise(resolve => setTimeout(resolve, 1500));
+            } else {
+                console.log('✅ Verificação final: tudo OK');
+            }
+            
+            // Fallback: Always replace interpolations directly in DOM as safety measure
+            // This runs for ALL templates, not just when problems are detected
+            if (hasAngularTemplates && includeAngular && additionalData) {
+                console.log('🔄 Aplicando fallback preventivo para garantir resolução de interpolações...');
+                await page.evaluate((additionalData) => {
+                    const body = document.body;
+                    const textContent = body.textContent || '';
+                    const innerHTML = body.innerHTML || '';
+                    
+                    // Always apply fallback to ensure interpolations are resolved
+                    const hasUnresolved = textContent.includes('{{record.') || textContent.includes('{{faixa.') || 
+                                         innerHTML.includes('{{record.') || innerHTML.includes('{{faixa.');
+                    
+                    console.log('Aplicando fallback preventivo: garantindo que interpolações estão resolvidas');
+                    console.log('Tem interpolações não resolvidas?', hasUnresolved);
+                    
+                    // Replace record interpolations
+                    if (additionalData.imposto) {
+                        const record = additionalData.imposto;
+                        const recordDesc = record.descricao || '';
+                        const recordCodigo = record.codigo || '';
+                        
+                        console.log('Substituindo record.descricao por:', recordDesc);
+                        console.log('Substituindo record.codigo por:', recordCodigo);
+                        
+                        // Replace in all text nodes (more aggressive)
+                        const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT, null, false);
+                        const textNodes = [];
+                        let node;
+                        while (node = walker.nextNode()) {
+                            if (node.textContent && (node.textContent.includes('{{record.') || node.textContent.includes('{{faixa.'))) {
+                                textNodes.push(node);
+                            }
+                        }
+                        
+                        textNodes.forEach(textNode => {
+                            let text = textNode.textContent;
+                            text = text.replace(/\{\{record\.codigo\}\}/g, recordCodigo);
+                            text = text.replace(/\{\{record\.descricao\}\}/g, recordDesc);
+                            textNode.textContent = text;
+                        });
+                        
+                        // Replace in HTML (more aggressive - replace in all elements)
+                        const allElements = body.querySelectorAll('*');
+                        allElements.forEach(el => {
+                            if (el.innerHTML && el.innerHTML.includes('{{record.')) {
+                                el.innerHTML = el.innerHTML
+                                    .replace(/\{\{record\.codigo\}\}/g, recordCodigo)
+                                    .replace(/\{\{record\.descricao\}\}/g, recordDesc);
+                            }
+                        });
+                        
+                        // Also replace in body innerHTML as final fallback
+                        body.innerHTML = body.innerHTML
+                            .replace(/\{\{record\.codigo\}\}/g, recordCodigo)
+                            .replace(/\{\{record\.descricao\}\}/g, recordDesc);
+                    }
+                        
+                        // Replace faixa interpolations in table
+                        if (additionalData.faixas && additionalData.faixas.length > 0) {
+                            const tbody = body.querySelector('tbody');
+                            if (tbody) {
+                                // Clear existing rows except the "no data" row
+                                const existingRows = tbody.querySelectorAll('tr[ng-repeat]');
+                                existingRows.forEach(row => row.remove());
+                                
+                                // Create new rows for each faixa
+                                additionalData.faixas.forEach(faixa => {
+                                    const tr = document.createElement('tr');
+                                    tr.innerHTML = `
+                                        <td>${faixa.volume_minimo}</td>
+                                        <td>${faixa.volume_maximo}</td>
+                                        <td>${faixa.percentual}</td>
+                                        <td>
+                                            <i class="fa fa-edit" tooltip="Editar" ng-if="viewState == 'edit'" ng-click="abreModalFaixa(faixa)"></i>
+                                            <i class="fa fa-trash m-l-xs cursor" tooltip="Excluir" ng-if="viewState == 'edit'" ng-click="remove(${faixa.id})"></i>
+                                        </td>
+                                    `;
+                                    tbody.insertBefore(tr, tbody.querySelector('tr[ng-if]'));
+                                });
+                            }
+                            
+                            // Replace modal interpolations and fill form fields
+                            const modalBody = body.querySelector('.modal-body');
+                            if (modalBody) {
+                                console.log('Processando modal-body...');
+                                // Replace record.descricao in h4
+                                const h4Element = modalBody.querySelector('h4');
+                                if (h4Element) {
+                                    const originalHTML = h4Element.innerHTML;
+                                    if (additionalData.imposto && additionalData.imposto.descricao) {
+                                        h4Element.innerHTML = originalHTML.replace(/\{\{record\.descricao\}\}/g, additionalData.imposto.descricao);
+                                        console.log('Substituído {{record.descricao}} no h4 por:', additionalData.imposto.descricao);
+                                    } else {
+                                        // Remove interpolation if no data
+                                        h4Element.innerHTML = originalHTML.replace(/\{\{record\.descricao\}\}/g, '');
+                                    }
+                                }
+                                
+                                // Fill form fields with first faixa data
+                                if (additionalData.faixas && additionalData.faixas.length > 0) {
+                                    const firstFaixa = additionalData.faixas[0];
+                                    const volumeMinInput = modalBody.querySelector('#volume_minimo');
+                                    const volumeMaxInput = modalBody.querySelector('#volume_maximo');
+                                    const percentualInput = modalBody.querySelector('#percentual');
+                                    
+                                    if (volumeMinInput && firstFaixa.volume_minimo !== undefined) {
+                                        volumeMinInput.value = firstFaixa.volume_minimo;
+                                        volumeMinInput.setAttribute('value', firstFaixa.volume_minimo);
+                                        // Trigger input event for AngularJS
+                                        volumeMinInput.dispatchEvent(new Event('input', { bubbles: true }));
+                                        console.log('Preenchido volume_minimo:', firstFaixa.volume_minimo);
+                                    }
+                                    if (volumeMaxInput && firstFaixa.volume_maximo !== undefined) {
+                                        volumeMaxInput.value = firstFaixa.volume_maximo;
+                                        volumeMaxInput.setAttribute('value', firstFaixa.volume_maximo);
+                                        volumeMaxInput.dispatchEvent(new Event('input', { bubbles: true }));
+                                        console.log('Preenchido volume_maximo:', firstFaixa.volume_maximo);
+                                    }
+                                    if (percentualInput && firstFaixa.percentual !== undefined) {
+                                        percentualInput.value = firstFaixa.percentual;
+                                        percentualInput.setAttribute('value', firstFaixa.percentual);
+                                        percentualInput.dispatchEvent(new Event('input', { bubbles: true }));
+                                        console.log('Preenchido percentual:', firstFaixa.percentual);
+                                    }
+                                }
+                            }
+                        }
+                        
+                        return {
+                            replaced: true,
+                            hasUnresolved: textContent.includes('{{record.') || textContent.includes('{{faixa.') || 
+                                         innerHTML.includes('{{record.') || innerHTML.includes('{{faixa.')
+                        };
+                }, additionalData);
+                
+                console.log('✅ Fallback aplicado');
+                
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        }
     }
     
     // Capturar screenshot

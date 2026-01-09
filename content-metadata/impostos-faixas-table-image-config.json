@@ -1,0 +1,33 @@
+{
+  "pageName": "Impostos - Faixas de Incidência",
+  "htmlPath": "/Applications/MAMP/htdocs/milks/web/src/secure/pay/imposto/views/incidencia.tab.html",
+  "outputImage": "content/impostos-faixas-table.png",
+  "renderOptions": {
+    "viewport": {
+      "width": 1200,
+      "height": 800,
+      "deviceScaleFactor": 2
+    }
+  },
+  "processAngularTemplates": true,
+  "autoDetectElements": false,
+  "elements": [
+    {
+      "selector": "button[ng-click='abreModalFaixa()']",
+      "number": 1
+    },
+    {
+      "selector": "i.fa.fa-edit[ng-click='abreModalFaixa(faixa)']",
+      "number": 2
+    },
+    {
+      "selector": "i.fa.fa-trash[ng-click='remove(faixa.id)']",
+      "number": 3
+    }
+  ],
+  "database": {
+    "enabled": true,
+    "dataFile": "content-metadata/impostos-faixas-data.json"
+  }
+}
+

@@ -12,11 +12,19 @@
 export async function getElementPositions(page, selectors) {
     const positions = await page.evaluate((selArray) => {
         const results = [];
+        const processedElements = new Set();
         
         selArray.forEach((selector, index) => {
             try {
-                const element = document.querySelector(selector);
-                if (element) {
+                // Use querySelectorAll to get all matching elements
+                const elements = document.querySelectorAll(selector);
+                
+                elements.forEach((element) => {
+                    // Skip if already processed (same element reference)
+                    if (processedElements.has(element)) {
+                        return;
+                    }
+                    
                     const rect = element.getBoundingClientRect();
                     const style = window.getComputedStyle(element);
                     
@@ -29,8 +37,39 @@ export async function getElementPositions(page, selectors) {
                         return;
                     }
                     
+                    processedElements.add(element);
+                    
+                    // Generate a more specific selector for this element
+                    let specificSelector = selector;
+                    if (elements.length > 1) {
+                        // If multiple elements match, create a unique selector
+                        const ngClick = element.getAttribute('ng-click');
+                        if (ngClick) {
+                            specificSelector = `${selector}[ng-click="${ngClick}"]`;
+                        } else {
+                            // Use nth-of-type as fallback
+                            const parent = element.parentElement;
+                            if (parent) {
+                                const siblings = Array.from(parent.children).filter(el => {
+                                    // Check if element matches the base selector
+                                    try {
+                                        return parent.querySelector(selector) === el || 
+                                               Array.from(parent.querySelectorAll(selector)).includes(el);
+                                    } catch {
+                                        return false;
+                                    }
+                                });
+                                const index = siblings.indexOf(element);
+                                if (index >= 0) {
+                                    specificSelector = `${selector}:nth-of-type(${index + 1})`;
+                                }
+                            }
+                        }
+                    }
+                    
                     results.push({
-                        selector: selector,
+                        selector: specificSelector,
+                        originalSelector: selector,
                         index: index,
                         top: rect.top,
                         left: rect.left,
@@ -41,7 +80,7 @@ export async function getElementPositions(page, selectors) {
                         centerX: rect.left + rect.width / 2,
                         centerY: rect.top + rect.height / 2
                     });
-                }
+                });
             } catch (e) {
                 console.warn(`Error getting position for selector ${selector}:`, e.message);
             }

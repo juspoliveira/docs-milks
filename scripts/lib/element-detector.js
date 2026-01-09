@@ -39,11 +39,27 @@ export async function detectElements(page) {
             if (element.getAttribute('ng-model')) {
                 attrs.push(`[ng-model="${element.getAttribute('ng-model')}"]`);
             }
+            if (element.getAttribute('ng-click')) {
+                attrs.push(`[ng-click="${element.getAttribute('ng-click')}"]`);
+            }
             if (element.getAttribute('type')) {
                 attrs.push(`[type="${element.getAttribute('type')}"]`);
             }
             
             selector += attrs.join('');
+            
+            // For links without unique attributes, try to use text content or parent context
+            if (element.tagName.toLowerCase() === 'a' && attrs.length === 0) {
+                // Try to find a unique identifier using parent or text
+                const parent = element.parentElement;
+                if (parent) {
+                    const siblings = Array.from(parent.children).filter(el => el.tagName.toLowerCase() === 'a');
+                    const index = siblings.indexOf(element);
+                    if (index >= 0 && siblings.length > 1) {
+                        selector += `:nth-of-type(${index + 1})`;
+                    }
+                }
+            }
             
             return selector;
         }
@@ -84,6 +100,7 @@ export async function detectElements(page) {
         
         // Selectors for editable elements related to database attributes
         // Only elements with ng-model linked to record.* (database fields)
+        // Also include action buttons (for list screens) and navigation links
         const selectors = [
             // Inputs with ng-model linked to record (database fields)
             'input[ng-model^="record."]',
@@ -97,7 +114,11 @@ export async function detectElements(page) {
             'textarea[ng-model^="record."]',
             // Area for formula construction
             '[ui-sortable][ng-model="record.formula"]',
-            '[ui-sortable]'
+            '[ui-sortable]',
+            // Action buttons with ng-click (for list screens)
+            'button[ng-click]',
+            // Navigation links with ng-click (for menu navigation)
+            'a[ng-click]'
         ];
         
         selectors.forEach(selector => {
@@ -187,15 +208,27 @@ export async function detectElements(page) {
                         type = 'sortable';
                     }
                     
+                    // Get button/link text for action buttons and navigation links
+                    let buttonText = '';
+                    if (tagName === 'button' || tagName === 'a') {
+                        buttonText = element.textContent.trim();
+                        // Remove icon text (usually in <i> tags)
+                        const icon = element.querySelector('i');
+                        if (icon) {
+                            buttonText = buttonText.replace(icon.textContent, '').trim();
+                        }
+                    }
+                    
                     results.push({
                         selector: elementSelector,
                         tagName: tagName,
                         type: type,
-                        label: label,
+                        label: label || buttonText,
                         name: element.getAttribute('name') || '',
                         id: element.getAttribute('id') || '',
                         ngModel: element.getAttribute('ng-model') || '',
-                        className: className
+                        className: className,
+                        ngClick: element.getAttribute('ng-click') || ''
                     });
                 });
             } catch (e) {
@@ -233,6 +266,14 @@ export function filterElements(elements) {
         'possui_gestao', 'tipo_bonus_gestao', 'gestao_tanque_id', 'gestao_cooperativa_id',
         'utiliza_volume_informado'
     ];
+    // pay_consolidacao_qualidade
+    const consolidacaoQualidadeFields = [
+        'codigo', 'descricao', 'exercicio', 'competencia', 'dt_inicio', 'dt_fim', 'fechado'
+    ];
+    // pay_versao_svl
+    const versaoSvlFields = [
+        'codigo', 'versao', 'precisao_bonus_litro', 'tipo_bonus_litro', 'tabela_preco_id'
+    ];
     
     // Mapeamento de IDs/names do HTML para campos da base
     const idToFieldMap = {
@@ -260,11 +301,15 @@ export function filterElements(elements) {
         'cpf': 'cpf_beneficiario',
         'tipo_gestao': 'tipo_bonus_gestao',
         'tanque_gestao': 'gestao_tanque_id',
-        'cooperativa_gestao': 'gestao_cooperativa_id'
+        'cooperativa_gestao': 'gestao_cooperativa_id',
+        'descricao': 'descricao',
+        'exercicio': 'exercicio',
+        'competencia': 'competencia',
+        'referencia': 'referencia'
     };
     
     // Combinar todos os campos
-    const allDbFields = [...new Set([...modeloPagamentoFields, ...contratoFields])];
+    const allDbFields = [...new Set([...modeloPagamentoFields, ...contratoFields, ...consolidacaoQualidadeFields, ...versaoSvlFields])];
     
     elements.forEach(el => {
         // Skip if selector already seen
@@ -318,6 +363,41 @@ export function filterElements(elements) {
         if (el.tagName === 'input' && el.type === 'checkbox' && el.ngModel) {
             const fieldName = el.ngModel.replace('record.', '');
             if (allDbFields.includes(fieldName)) {
+                seen.add(el.selector);
+                filtered.push(el);
+                return;
+            }
+        }
+        
+        // CRITÉRIO 5: Botões de ação com ng-click (para telas de listagem)
+        // Incluir qualquer botão que tenha ng-click (são ações importantes)
+        if (el.tagName === 'button' && el.ngClick && el.ngClick.trim() !== '') {
+            seen.add(el.selector);
+            filtered.push(el);
+            return;
+        }
+        
+        // CRITÉRIO 6: Input com ng-model vinculado a $localStorage (campo de simulação SVL)
+        if (el.tagName === 'input' && el.ngModel && el.ngModel.includes('$localStorage')) {
+            seen.add(el.selector);
+            filtered.push(el);
+            return;
+        }
+        
+        // CRITÉRIO 7: Links de navegação com ng-click (para menus laterais e navegação)
+        // Incluir links que têm ng-click e estão em menus de navegação
+        if (el.tagName === 'a' && el.ngClick && el.ngClick.trim() !== '') {
+            // Verificar se está em um contexto de navegação baseado em classes e ng-click
+            const className = el.className || '';
+            const isNavigationLink = className.includes('list-group-item') ||
+                                     className.includes('nav-link') ||
+                                     className.includes('menu-item') ||
+                                     el.ngClick.includes('changePage') ||
+                                     el.ngClick.includes('navigate') ||
+                                     el.selector.includes('.list-group-item') ||
+                                     el.selector.includes('aside');
+            
+            if (isNavigationLink) {
                 seen.add(el.selector);
                 filtered.push(el);
                 return;

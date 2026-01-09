@@ -1,0 +1,27 @@
+{
+  "pageName": "consolidacao-produtores-list",
+  "title": "Listagem de Produtores na Consolidação de Qualidade",
+  "description": "Tela de listagem de produtores com indicadores de qualidade consolidados",
+  "htmlPath": "/Applications/MAMP/htdocs/milks/web/src/secure/pay/consolidacaoqualidade/views/consolidacao.produtor.list.html",
+  "outputImage": "content/consolidacao-produtores-list.png",
+  "autoDetectElements": true,
+  "autoUpdateConfig": false,
+  "database": {
+    "enabled": false
+  },
+  "fillData": {
+    "enabled": false
+  },
+  "renderOptions": {
+    "viewport": {
+      "width": 1400,
+      "height": 1000,
+      "deviceScaleFactor": 2
+    },
+    "waitForSelector": ".element-number-badge",
+    "waitTimeout": 5000,
+    "fallbackWait": 2000
+  },
+  "customStyles": ""
+}
+

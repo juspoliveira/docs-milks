@@ -1,0 +1,29 @@
+{
+  "pageName": "acordos-comerciais",
+  "title": "Acordos Comerciais",
+  "description": "Tela de ajustes de acordos comerciais",
+  "htmlPath": "/Applications/MAMP/htdocs/milks/web/src/secure/pay/ajusteacordo/views/ajusteacordo.list.html",
+  "outputImage": "content/acordos-comerciais.png",
+  "autoDetectElements": true,
+  "autoUpdateConfig": false,
+  "database": {
+    "enabled": true,
+    "dataFile": "content-metadata/acordos-comerciais-data.json"
+  },
+  "fillData": {
+    "enabled": false,
+    "mappings": {}
+  },
+  "renderOptions": {
+    "viewport": {
+      "width": 1400,
+      "height": 900,
+      "deviceScaleFactor": 2
+    },
+    "waitForSelector": ".element-number-badge",
+    "waitTimeout": 5000,
+    "fallbackWait": 1500
+  },
+  "customStyles": ""
+}
+

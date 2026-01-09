@@ -1,0 +1,24 @@
+{
+  "imposto": {
+    "id": 30,
+    "codigo": "IMP-004",
+    "descricao": "FUNRURAL (Fundo de Assistência ao Trabalhador Rural)",
+    "conta_id": 30001
+  },
+  "faixas": [
+    {
+      "id": 11,
+      "imposto_id": 30,
+      "volume_minimo": 2300,
+      "volume_maximo": 5500,
+      "percentual": "2.6000"
+    },
+    {
+      "id": 12,
+      "imposto_id": 30,
+      "volume_minimo": 13400,
+      "volume_maximo": 99000,
+      "percentual": "10.0000"
+    }
+  ]
+}

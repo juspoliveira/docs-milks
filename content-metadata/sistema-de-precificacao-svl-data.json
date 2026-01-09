@@ -1,0 +1,13 @@
+{
+  "id": 8,
+  "conta_id": 40001,
+  "codigo": null,
+  "versao": "Versão 3.0",
+  "dt_criacao": "2022-11-08T14:02:32.000Z",
+  "dt_exclusao": null,
+  "dt_atualizacao": null,
+  "precisao_bonus_litro": 3,
+  "tipo_bonus_litro": "V",
+  "tabela_preco_id": null
+}
+
