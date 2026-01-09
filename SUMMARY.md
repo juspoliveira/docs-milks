@@ -4,7 +4,7 @@
 
 ## Documentação - Milks Pay
 
-* [Pagamento a produtores](content/pagamento-a-produtores.md)
+<!-- * [Pagamento a produtores](content/pagamento-a-produtores.md) -->
 <!-- * [Conceito e visão de operação](content/conceito-e-visao-de-operacao.md) -->
 * [Configurações](content/configuracoes.md)
 * [Consolidação de qualidade](content/consolidacao-de-qualidade.md)
