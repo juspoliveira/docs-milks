@@ -1,254 +1,120 @@
-# Manual do Módulo Pay
-
-Bem-vindo ao manual do módulo Pay.
-
-Este manual contém toda a documentação necessária para entender, configurar e utilizar o módulo Pay do projeto.
-
-## Estrutura
+# Módulo Milk's Pay
 
-Este manual está organizado em seções que cobrem:
+Bem-vindo à documentação do módulo **Milk's Pay**, o sistema completo para geração de folha de pagamento de produtores de leite.
 
-- Introdução e visão geral
-- Instalação e configuração
-- Guias de uso
-- Referência de API
-- Exemplos e casos de uso
-
-## Configuração do MCP (Model Context Protocol)
-
-Este projeto está configurado para acesso via Model Context Protocol (MCP) através do servidor `gitbook-mcp`, permitindo que assistentes de IA acessem e interajam com a documentação do space existente no GitBook.
-
-### Pré-requisitos
-
-- **Node.js 20+ instalado** (inclui npm automaticamente)
-  - Se não tiver instalado, consulte a seção "Pré-requisitos" em [SETUP.md](SETUP.md)
-  - Verifique a instalação: `node --version` e `npm --version`
-- Token de API do GitBook
-- ID da organização no GitBook
-- ID do space existente no GitBook
-
-### Instalação do Servidor MCP
-
-O servidor MCP (`gitbook-mcp`) já está incluído neste projeto no diretório `gitbook-mcp/`.
-
-Para instalar as dependências:
-
-```bash
-cd gitbook-mcp
-npm install
-npm run build
-```
-
-### Configuração
-
-1. **Obter Token de API do GitBook:**
-   - Acesse: https://app.gitbook.com/account/developer
-   - Gere um novo token de API
-   - O token deve começar com `gb_live_` ou `gb_api_`
-
-2. **Identificar IDs:**
-   - **Organization ID**: Pode ser encontrado na URL do seu space: `https://app.gitbook.com/o/{ORGANIZATION_ID}/...`
-   - **Space ID**: Pode ser encontrado na URL do seu space: `https://app.gitbook.com/o/{ORGANIZATION_ID}/s/{SPACE_ID}/...`
-   - Alternativamente, você pode usar as ferramentas MCP `list_organizations` e `list_spaces` após a configuração inicial
-
-3. **Configurar Variáveis de Ambiente:**
-   
-   Copie o arquivo `env.example` para `.env.local`:
-   
-   ```bash
-   cp env.example .env.local
-   ```
-   
-   Edite o arquivo `.env.local` e adicione suas credenciais:
-   
-   ```
-   GITBOOK_API_TOKEN=seu_token_aqui
-   GITBOOK_ORGANIZATION_ID=seu_organization_id_aqui
-   GITBOOK_SPACE_ID=seu_space_id_aqui
-   ```
-
-### Uso do MCP
-
-#### Para Desenvolvimento Local
-
-```bash
-cd gitbook-mcp
-npm run dev
-```
-
-#### Para Uso com Assistente de IA (Claude Desktop, VS Code, etc.)
-
-O servidor MCP pode ser configurado em diferentes clientes:
-
-**VS Code (com GitHub Copilot):**
-
-Adicione ao arquivo de configuração MCP do VS Code:
-
-```json
-{
-    "servers": {
-        "gitbook-mcp": {
-            "type": "stdio",
-            "command": "npx",
-            "args": [
-                "gitbook-mcp",
-                "--organization-id=seu_organization_id",
-                "--space-id=seu_space_id"
-            ],
-            "env": {
-                "GITBOOK_API_TOKEN": "seu_token_aqui"
-            }
-        }
-    }
-}
-```
+O Milk's Pay foi desenvolvido para proporcionar aos laticínios um ambiente que possibilite gerar a folha de pagamento dos produtores de forma rápida, flexível e totalmente parametrizável, com foco no **pagamento por qualidade** e na valorização justa da produção.
 
-**Claude Desktop:**
+## Principais Funcionalidades
 
-Adicione ao arquivo de configuração (`~/Library/Application Support/Claude/claude_desktop_config.json` no macOS):
+O módulo Milk's Pay oferece um conjunto abrangente de funcionalidades para gerenciar todo o processo de pagamento aos produtores:
 
-```json
-{
-    "mcpServers": {
-        "gitbook-mcp": {
-            "command": "npx",
-            "args": ["gitbook-mcp", "--organization-id=seu_organization_id", "--space-id=seu_space_id"],
-            "env": {
-                "GITBOOK_API_TOKEN": "seu_token_aqui"
-            }
-        }
-    }
-}
-```
+### 📊 Gestão de Qualidade e Consolidação
+- **Consolidação de Qualidade**: Agregação e análise dos resultados de análises dos indicadores de composição do leite
+- **Bonificação e Penalização**: Sistema automático de bonificação ou penalização baseado na performance de cada produtor
+- **Indicadores de Qualidade**: Controle de CPP, CCS, Gordura, Proteína, ESD, Sólidos, Lactose, Acidez, Densidade, Crioscopia e Temperatura
 
-### Ferramentas Disponíveis
+### 💰 Sistema de Precificação (SVL)
+- **Múltiplas Tabelas de Preços**: Suporte a várias versões de tabelas de precificação
+- **Faixas de Bonificação/Penalização**: Configuração de faixas para diferentes indicadores:
+  - Volume
+  - Temperatura
+  - Crioscopia
+  - Logística
+  - Fidelidade
+  - Projetos
+  - Gestão
+  - Certificação
+- **Flexibilidade de Configuração**: Parâmetros extensos para controle do sistema de valorização do leite
 
-O servidor MCP fornece 12 ferramentas para operações de conteúdo:
+### 📝 Modelos de Pagamento
+- **Fórmulas de Cálculo Personalizadas**: Sistema de fórmulas flexíveis com variáveis de substituição (Macros)
+- **Múltiplos Modelos**: Suporte a vários modelos de pagamento independentes na mesma folha
+- **Nomenclatura Customizada**: Uso da nomenclatura já utilizada pelo laticínio nos demonstrativos
 
-- **Descoberta de Organizações**: `list_organizations`
-- **Gerenciamento de Spaces**: `list_spaces`, `get_space`, `get_space_content`
-- **Busca**: `search_content`
-- **Recuperação de Conteúdo**: `get_page_content`, `get_page_by_path`
-- **Gerenciamento de Arquivos**: `get_space_files`, `get_file`
-- **Gerenciamento de Coleções**: `list_collections`, `get_collection`, `get_collection_spaces`
+### 📄 Contratos e Vigências
+- **Gestão de Contratos**: Definição das principais regras de operação que determinam como a folha será calculada
+- **Vigências**: Controle de períodos de vigência dos contratos
+- **Pagamento por Propriedade**: Suporte a pagamento por fazenda para produtores que desejam receber por unidade de produção
+- **Acordos Comerciais**: Configuração de acordos comerciais e bonificações especiais
+- **Tanques Coletivos**: Suporte a junção de volumes por participação em tanques coletivos ou cooperativas virtuais
 
-### Prompts Disponíveis
+### 📊 Folha e Simulações
+- **Geração de Folha**: Cálculo completo da folha de pagamento
+- **Simulações**: Simulação de valores antes da geração final
+- **Conferência de Valores**: Apoio à conferência dos valores antes da geração final da folha
 
-O servidor também fornece 6 prompts para workflows de documentação:
+### 🧾 Emissão de Documentos
+- **Notas Fiscais Eletrônicas (NF-e)**: Configuração e emissão de NF-e
+- **Demonstrativos**: Publicação dos demonstrativos de pagamento
+- **Documentos Complementares**: Geração de documentos adicionais conforme necessário
 
-- `fetch_documentation` - Busca e analisa conteúdo de documentação
-- `analyze_content_gaps` - Identifica lacunas na documentação
-- `content_audit` - Realiza auditoria de qualidade
-- `documentation_summary` - Gera resumos de spaces
-- `content_optimization` - Otimiza conteúdo para SEO, legibilidade, etc.
+### 📈 Relatórios e Conciliações
+- **Relatórios de Controle**: Relatórios completos para controle e auditoria
+- **Conciliações**: Ferramentas para conciliação de valores e volumes
+- **Análises**: Relatórios analíticos para tomada de decisão
 
-### Documentação Adicional
+### 🔄 Integração e Importação
+- **Integração com Milk's Rota**: Integração com o aplicativo coletor para obtenção de volumes
+- **Importação de Dados**: Importação de deduções e créditos via arquivo pré-formatado
+- **API**: Suporte a integração via API para deduções, créditos e outros dados
 
-Para mais informações sobre o servidor MCP, consulte:
-- [README do gitbook-mcp](gitbook-mcp/README.md)
-- [Documentação do GitBook API](https://api.gitbook.com/openapi.json)
-- [Model Context Protocol](https://modelcontextprotocol.io)
+### ⚙️ Configurações e Parâmetros
+- **Configurações Globais**: Parâmetros globais que afetam o comportamento do módulo
+- **Impostos e Faixas**: Configuração de impostos com faixas de incidência baseadas em volume
+- **Tabelas de Preços**: Gestão de tabelas de preços e suas versões
 
-## Estrutura do Projeto
+## Conceito e Visão de Operação
 
-```
-manual/
-├── README.md                  # Este arquivo
-├── SUMMARY.md                 # Sumário do GitBook
-├── SETUP.md                   # Guia de configuração
-├── SITE_MCP_SERVERS.md        # Gerenciamento de Site MCP Servers
-├── docs/                      # Arquivos de documentação
-│   ├── instalacao.md
-│   ├── configuracao.md
-│   ├── uso.md
-│   ├── api.md
-│   └── exemplos.md
-├── scripts/                   # Scripts de gerenciamento
-│   └── manage-site-mcp.js     # Gerenciar Site MCP Servers
-├── gitbook-mcp/               # Servidor MCP do GitBook
-├── gitbook-site-mcp-config.json # Configuração de referência
-├── env.example                # Template de configuração
-└── .gitignore                 # Arquivos ignorados pelo git
-```
+O Módulo Milk's Pay foi desenhado para prover um ambiente que possibilite aos laticínios gerar a folha de pagamento dos produtores de leite de forma rápida, flexível e sobretudo parametrizável.
 
-## Gerenciamento de Site MCP Servers
+O principal fundamento de operação está apoiado sobre o conceito de **pagamento por qualidade**, onde o principal requisito é a [**consolidação**](content/consolidacao-de-qualidade.md) dos resultados de análises dos indicadores de composição do leite. Esta consolidação fornece um diferencial para **bonificação** ou **penalização** dos produtores de acordo com a performance obtida por cada um no período de fechamento.
 
-Este projeto também inclui suporte para gerenciar Site MCP Servers no GitBook, permitindo configurar servidores MCP externos para uso no seu Docs Site.
+Outro requisito indispensável para que a folha de pagamento seja construída é a utilização do módulo [**Milk's Rota**](https://app.gitbook.com/o/-LjslsqvYZjoA2L-GX5y/s/-MiarV4x7C9ia6BvqaTk/) (Aplicativo coletor), pois o levantamento do volume entregue pelo produtor é obtido através dos registros oriundos deste aplicativo, única forma de se obter o dado essencial para os cálculos.
 
-**Documentação completa**: [SITE_MCP_SERVERS.md](SITE_MCP_SERVERS.md)
+A flexibilização para inclusão de parâmetros que controlam o sistema de valorização do leite **(SVL)** é bem extensa e faz parte do modelo de [**precificação**](content/sistema-de-precificacao-svl.md). Aqui são admitidas várias **versões de tabelas**, que consideram faixas de bonificação ou penalização para diversos indicadores além da qualidade, como: Volume, Temperatura, Crioscopia, Logística, Fidelidade, Projetos, Gestão e Certificação.
 
-### Comandos Rápidos
+As **Deduções** e **Créditos** são considerados por meio da importação de registros pré-formatados em arquivo ou por meio da **API**.
 
-```bash
-# Listar servidores MCP configurados
-node scripts/manage-site-mcp.js list
+Parâmetros adicionais de controle, bonificação, acordos comerciais, junção de volumes por participação em tanques coletivos ou cooperativas virtuais também são admitidos por meio de outro pilar fundamental que é o [**contrato**](content/contratos-e-vigencias.md) e sua **vigência**. No contrato são definidas as principais regras de operação que determinam como a folha será calculada, podendo ser considerado o pagamento por propriedade (fazenda) para os casos onde o produtor deseja receber por unidade de produção, ampliando o controle.
 
-# Criar novo servidor MCP
-node scripts/manage-site-mcp.js create "Nome" "https://url.com" '{"Authorization":"Bearer token"}'
+Por fim, o [**Modelo de Pagamento**](content/modelos-de-pagamento.md) contém o cerne de funcionamento do módulo, que é a **Fórmula de Cálculo**, o maior diferencial do módulo Milk's Pay, que permite a utilização de **variáveis** de substituição (**Macros**), para indicar o que será calculado no modelo de pagamento e o que será impresso no demonstrativo, com a nomenclatura já utilizada pelo laticínio. Vários modelos de pagamento são admitidos, provendo uma infinidade de fórmulas independentes, que podem ser utilizadas na mesma folha de pagamento.
 
-# Ver detalhes de um servidor
-node scripts/manage-site-mcp.js get <server_id>
+O Milk's Pay admite, em funções secundárias, a configuração e emissão de **NF-e, Simulação de Valores, Publicação dos demonstrativos e Documentos** além de conter os [**relatórios de controle**](content/relatorios-e-conciliacoes.md) bem como o apoio a conferência dos valores antes da geração final da folha.
 
-# Atualizar servidor
-node scripts/manage-site-mcp.js update <server_id> [nome] [url] [headers]
+## Documentação
 
-# Deletar servidor
-node scripts/manage-site-mcp.js delete <server_id>
-```
+Esta documentação está organizada nas seguintes seções:
 
-**Nota**: Para usar os comandos acima, você precisa configurar `GITBOOK_SITE_ID` no arquivo `.env.local`.
+- **[Pagamento a produtores](content/pagamento-a-produtores.md)** - Visão geral do processo de pagamento
+- **[Conceito e visão de operação](content/conceito-e-visao-de-operacao.md)** - Fundamentos e planejamento do módulo
+- **[Configurações](content/configuracoes.md)** - Parâmetros globais e configurações do sistema
+- **[Consolidação de qualidade](content/consolidacao-de-qualidade.md)** - Gestão de análises e indicadores de qualidade
+- **[Sistema de Precificação (SVL)](content/sistema-de-precificacao-svl.md)** - Configuração de tabelas e faixas de precificação
+- **[Tabela de preços](content/tabela-de-precos.md)** - Gestão de tabelas de preços
+- **[Modelos de pagamento](content/modelos-de-pagamento.md)** - Configuração de fórmulas de cálculo
+- **[Contratos e vigências](content/contratos-e-vigencias.md)** - Gestão de contratos e regras de operação
+- **[Impostos](content/impostos.md)** - Configuração de impostos e faixas de incidência
+- **[Folha e simulações](content/folha-e-simulacoes.md)** - Geração de folha e simulações
+- **[Acordos comerciais](content/acordos-comerciais.md)** - Gestão de acordos comerciais
+- **[Relatórios e Conciliações](content/relatorios-e-conciliacoes.md)** - Relatórios e ferramentas de conciliação
 
-## Sincronização com GitSync
+## Início Rápido
 
-Este projeto suporta sincronização bidirecional automática com o GitBook usando **GitSync**, a funcionalidade nativa do GitBook.
+Para começar a usar o módulo Milk's Pay:
 
-### O que é GitSync?
+1. Configure os [parâmetros globais](content/configuracoes.md) do sistema
+2. Defina as [tabelas de preços](content/tabela-de-precos.md) e o [sistema de precificação](content/sistema-de-precificacao-svl.md)
+3. Configure os [modelos de pagamento](content/modelos-de-pagamento.md) com suas fórmulas
+4. Cadastre os [contratos](content/contratos-e-vigencias.md) dos produtores
+5. Realize a [consolidação de qualidade](content/consolidacao-de-qualidade.md) do período
+6. Gere a [folha de pagamento](content/folha-e-simulacoes.md)
 
-O GitSync permite sincronizar automaticamente o conteúdo entre o repositório GitHub e o Space do GitBook, mantendo ambos sempre atualizados.
+## Requisitos
 
-### ⚠️ Isolamento e Escopo
+- Integração com o módulo **Milk's Rota** para obtenção de volumes de coleta
+- Configuração de análises de qualidade do leite
+- Definição de contratos e modelos de pagamento
 
-**Importante**: A configuração do GitSync é **isolada por Space** e não afeta outros projetos:
+---
 
-- ✅ Configurado apenas para o Space específico (`wyOmfrOj0hbYJWKsVGBS` - Documentação - Milks Pay)
-- ✅ Não afeta outros Spaces na organização
-- ✅ Não afeta outros repositórios GitHub
-- ✅ Outros projetos continuam permitindo edições online normalmente
-
-### Configuração
-
-1. **Valide a estrutura** antes de configurar:
-   ```bash
-   node scripts/validate-gitsync.js
-   ```
-
-2. **Siga o guia completo**: Consulte [GITSYNC.md](GITSYNC.md) para instruções detalhadas passo a passo.
-
-### Diferenças: GitSync vs Scripts Manuais
-
-| Aspecto | GitSync | Scripts Manuais |
-|---------|---------|------------------|
-| **Sincronização** | Automática e bidirecional | Manual, via API |
-| **Edições online** | Desabilitadas (apenas neste Space) | Permanecem habilitadas |
-| **Configuração** | Uma vez, via interface | Requer scripts e API |
-| **Isolamento** | Por Space (automático) | Por script/configuração |
-
-### Quando Usar Cada Método
-
-- **Use GitSync se**: Você quer sincronização automática e bidirecional, e não precisa editar online no GitBook
-- **Use Scripts Manuais se**: Você precisa manter edições online habilitadas ou quer mais controle sobre o processo
-
-**Documentação completa**: [GITSYNC.md](GITSYNC.md)
-
-## Próximos Passos
-
-1. Configure as credenciais no arquivo `.env.local`:
-   - `GITBOOK_API_TOKEN`
-   - `GITBOOK_ORGANIZATION_ID`
-   - `GITBOOK_SPACE_ID` (para acesso via gitbook-mcp)
-   - `GITBOOK_SITE_ID` (para gerenciar Site MCP Servers)
-2. Instale as dependências do servidor MCP: `cd gitbook-mcp && npm install && npm run build`
-3. Configure o servidor MCP no seu assistente de IA preferido
-4. (Opcional) Configure Site MCP Servers para seu Docs Site: veja [SITE_MCP_SERVERS.md](SITE_MCP_SERVERS.md)
-5. (Opcional) Configure GitSync para sincronização automática: veja [GITSYNC.md](GITSYNC.md)
-6. Comece a usar as ferramentas MCP para acessar e ajustar o manual do módulo Pay
+Para mais informações detalhadas sobre cada funcionalidade, consulte a documentação completa nas seções acima.

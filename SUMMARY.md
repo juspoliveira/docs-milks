@@ -1,11 +1,11 @@
 # Sumário
 
-<!-- * [Introdução](README.md) -->
+* [Introdução](README.md)
 
 ## Documentação - Milks Pay
 
 * [Pagamento a produtores](content/pagamento-a-produtores.md)
-* [Conceito e visão de operação](content/conceito-e-visao-de-operacao.md)
+<!-- * [Conceito e visão de operação](content/conceito-e-visao-de-operacao.md) -->
 * [Configurações](content/configuracoes.md)
 * [Consolidação de qualidade](content/consolidacao-de-qualidade.md)
 * [Sistema de Precificação (SVL)](content/sistema-de-precificacao-svl.md)
