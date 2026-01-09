@@ -1,6 +1,6 @@
 # Sumário
 
-* [Introdução](README.md)
+<!-- * [Introdução](README.md) -->
 
 ## Documentação - Milks Pay
 
