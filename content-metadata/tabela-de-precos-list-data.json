@@ -1,29 +1,29 @@
 {
   "records": [
     {
-      "id": 1,
-      "codigo": "01.0",
+      "id": 75,
+      "codigo": "003",
+      "nome": "Mercado e CEPEA"
+    },
+    {
+      "id": 74,
+      "codigo": "002",
+      "nome": "Mercado"
+    },
+    {
+      "id": 73,
+      "codigo": "001",
       "nome": "CEPEA"
     },
     {
-      "id": 2,
-      "codigo": "02",
-      "nome": "Preço base de Mercado"
-    },
-    {
-      "id": 5,
+      "id": 11,
       "codigo": null,
-      "nome": "CEPEA"
+      "nome": "CEPEA E MERCADO"
     },
     {
       "id": 6,
       "codigo": null,
       "nome": "Mercado"
-    },
-    {
-      "id": 7,
-      "codigo": "1",
-      "nome": "MERCADO - LEITE REFRIGERADO"
     }
   ]
 }

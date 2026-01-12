@@ -14,31 +14,66 @@
   "elements": [
     {
       "selector": "button[ui-sref='app.pay-tabelapreco-create']",
-      "number": 1
+      "number": 1,
+      "label": "Nova tabela",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
     },
     {
       "selector": "button[ng-click='filtro.open()']",
-      "number": 2
+      "number": 2,
+      "label": "Filtrar",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
     },
     {
       "selector": "th[md-order-by='codigo']",
-      "number": 3
+      "number": 3,
+      "label": "Código",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
     },
     {
       "selector": "th[md-order-by='nome']",
-      "number": 4
+      "number": 4,
+      "label": "Tabela",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
     },
     {
-      "selector": "md-icon:first-of-type",
-      "number": 5
+      "selector": "td.action md-icon:first-of-type",
+      "number": 5,
+      "label": "Visualizar",
+      "position": {
+        "top": "0px",
+        "right": "5px"
+      }
     },
     {
-      "selector": "md-icon:nth-of-type(2)",
-      "number": 6
+      "selector": "td.action md-icon:nth-of-type(2)",
+      "number": 6,
+      "label": "Editar",
+      "position": {
+        "top": "0px",
+        "right": "5px"
+      }
     },
     {
-      "selector": "md-icon:last-of-type",
-      "number": 7
+      "selector": "td.action md-icon:last-of-type",
+      "number": 7,
+      "label": "Excluir",
+      "position": {
+        "top": "0px",
+        "right": "5px"
+      }
     }
   ],
   "database": {

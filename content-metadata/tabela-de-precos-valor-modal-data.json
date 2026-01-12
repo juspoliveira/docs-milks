@@ -1,0 +1,14 @@
+{
+  "record": {
+    "id": 74,
+    "codigo": "002",
+    "nome": "Mercado"
+  },
+  "registro": {
+    "id": 731,
+    "codigo": "2025-10",
+    "ano": 2025,
+    "mes": 10,
+    "valor": 2.45
+  }
+}

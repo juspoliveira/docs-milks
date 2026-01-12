@@ -1,23 +1,58 @@
 {
   "record": {
-    "id": 1,
-    "codigo": "CEPEA",
-    "nome": "CEPEA - Leite Cru Refrigerado"
+    "id": 74,
+    "codigo": "002",
+    "nome": "Mercado"
   },
   "valores": [
     {
-      "id": 1,
-      "codigo": "2024-01",
-      "ano": 2024,
-      "mes": 1,
-      "valor": "2.50"
+      "id": 731,
+      "codigo": null,
+      "ano": 2025,
+      "mes": 10,
+      "valor": 2.45
     },
     {
-      "id": 2,
-      "codigo": "2024-02",
-      "ano": 2024,
+      "id": 706,
+      "codigo": null,
+      "ano": 2025,
+      "mes": 9,
+      "valor": 2.85
+    },
+    {
+      "id": 637,
+      "codigo": null,
+      "ano": 2025,
+      "mes": 6,
+      "valor": 2.4
+    },
+    {
+      "id": 599,
+      "codigo": null,
+      "ano": 2025,
+      "mes": 5,
+      "valor": 2.65
+    },
+    {
+      "id": 598,
+      "codigo": null,
+      "ano": 2025,
+      "mes": 4,
+      "valor": 2.75
+    },
+    {
+      "id": 597,
+      "codigo": null,
+      "ano": 2025,
+      "mes": 3,
+      "valor": 2.8
+    },
+    {
+      "id": 536,
+      "codigo": null,
+      "ano": 2025,
       "mes": 2,
-      "valor": "2.55"
+      "valor": 2.4
     }
   ]
 }

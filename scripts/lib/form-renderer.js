@@ -101,6 +101,10 @@ export function createFullHTML(formHTML, title = 'Formulário', elements = [], c
     const angularScripts = includeAngular ? `
     <!-- AngularJS -->
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular-animate.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular-aria.min.js"></script>
+    <!-- Angular Material JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-material/1.2.2/angular-material.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/2.5.6/ui-bootstrap-tpls.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-sortable/0.19.0/sortable.min.js"></script>
     ` : '';
@@ -114,6 +118,10 @@ export function createFullHTML(formHTML, title = 'Formulário', elements = [], c
     
     <!-- Bootstrap CSS -->
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Angular Material CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/angular-material/1.2.2/angular-material.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     
     <!-- Font Awesome -->
     <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
@@ -144,6 +152,52 @@ export function createFullHTML(formHTML, title = 'Formulário', elements = [], c
             border-bottom: 1px solid #ddd;
             padding: 10px 15px;
         }
+        /* Material Design Icons */
+        md-icon {
+            font-family: 'Material Icons';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+            cursor: pointer;
+            color: #666;
+        }
+        md-icon:hover {
+            color: #333;
+        }
+        /* Material Design Table */
+        md-table-container {
+            overflow-x: auto;
+        }
+        md-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        md-table th {
+            text-align: left;
+            font-weight: bold;
+            padding: 12px;
+            border-bottom: 2px solid #ddd;
+        }
+        md-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        td.action {
+            text-align: right;
+            white-space: nowrap;
+        }
+        td.action md-icon {
+            margin: 0 4px;
+        }
         ${customStyles}
     </style>
 </head>
@@ -171,7 +225,7 @@ export function createFullHTML(formHTML, title = 'Formulário', elements = [], c
                         // Bootstrap if not already bootstrapped
                         const body = document.body;
                         if (!angular.element(body).injector()) {
-                            angular.bootstrap(body, ['pay.ajusteacordo', 'pay.modelopagamento', 'pay.consolidacaoqualidade']);
+                            angular.bootstrap(body, ['pay.ajusteacordo', 'pay.modelopagamento', 'pay.consolidacaoqualidade', 'pay.tabelapreco', 'ngMaterial']);
                         }
                     } catch (e) {
                         console.warn('Erro ao inicializar AngularJS:', e.message);

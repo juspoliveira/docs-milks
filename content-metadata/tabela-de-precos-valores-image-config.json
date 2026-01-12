@@ -14,15 +14,30 @@
   "elements": [
     {
       "selector": "button[ng-click='abreModalValor()']",
-      "number": 1
+      "number": 1,
+      "label": "Incluir valor",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
     },
     {
-      "selector": "i.fa-edit",
-      "number": 2
+      "selector": "i.fa-edit[tooltip='Editar']",
+      "number": 2,
+      "label": "Editar valor",
+      "position": {
+        "top": "0px",
+        "right": "5px"
+      }
     },
     {
-      "selector": "i.fa-trash",
-      "number": 3
+      "selector": "i.fa-trash[tooltip='Excluir']",
+      "number": 3,
+      "label": "Excluir valor",
+      "position": {
+        "top": "0px",
+        "right": "5px"
+      }
     }
   ],
   "database": {

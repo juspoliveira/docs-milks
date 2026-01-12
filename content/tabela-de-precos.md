@@ -282,6 +282,93 @@ Os valores são ordenados por ano e mês, facilitando a visualização do histó
 
 ---
 
+## Modal de Inclusão/Edição de Valores
+
+O modal de valores permite adicionar novos valores mensais à tabela de preços ou editar valores existentes. O modal é aberto ao clicar no botão "Incluir valor" ou no ícone de edição de um valor existente.
+
+<figure>
+  <img src="tabela-de-precos-valor-modal.png" alt="Modal de inclusão e edição de valores da tabela de preços">
+  <figcaption>Modal de inclusão e edição de valores da tabela de preços</figcaption>
+</figure>
+
+> **Nota**: Modal de valores com os campos principais numerados para referência.
+
+### Descrição dos Elementos do Modal de Valores
+
+Seguindo a numeração presente na imagem acima:
+
+**1. Código**
+
+Campo de texto opcional que identifica o valor mensal dentro da tabela.
+
+**Como ajustar:**
+- Ao abrir o modal (incluir ou editar valor), o campo "Código" estará disponível
+- Digite um código identificador (máximo 20 caracteres) ou deixe em branco
+- O código é opcional e pode ser usado para referenciar valores específicos
+
+**Para que serve:**
+O código permite identificar valores específicos dentro da tabela, facilitando a organização e referência quando há múltiplos valores ou quando é necessário identificar valores de fontes específicas (ex: códigos de referência externa).
+
+**Como afeta o cálculo:**
+O código não afeta os cálculos da folha de pagamento. O sistema utiliza apenas o ano e mês para localizar o valor correto durante o cálculo.
+
+---
+
+**2. Ano**
+
+Campo numérico obrigatório que define o ano de referência do valor mensal.
+
+**Como ajustar:**
+- No modal de valores, o campo "Ano" é obrigatório
+- Digite o ano de referência (ex: 2024, 2025)
+- O campo aceita apenas números
+- O ano deve ser válido (geralmente entre 2000 e 2100)
+
+**Para que serve:**
+O ano identifica o período de referência do valor, permitindo que o sistema localize o valor correto durante o cálculo da folha de pagamento. É essencial para manter histórico de preços por ano.
+
+**Como afeta o cálculo:**
+O ano é utilizado junto com o mês para localizar o valor correto da tabela durante o cálculo. O sistema busca o valor correspondente ao ano e mês de referência da folha (ou mês anterior, conforme configuração do modelo de pagamento).
+
+---
+
+**3. Mês**
+
+Campo numérico obrigatório que define o mês de referência do valor mensal.
+
+**Como ajustar:**
+- No modal de valores, o campo "Mês" é obrigatório
+- Digite o mês de referência (1 a 12, onde 1 = Janeiro, 12 = Dezembro)
+- O campo aceita apenas números
+- O mês deve estar entre 1 e 12
+
+**Para que serve:**
+O mês identifica o período específico dentro do ano para o qual o valor se aplica. Junto com o ano, forma a chave única para localizar o valor correto durante o cálculo.
+
+**Como afeta o cálculo:**
+O mês é utilizado junto com o ano para localizar o valor correto da tabela durante o cálculo. O sistema busca o valor correspondente ao mês de referência da folha (ou mês anterior, conforme configuração do modelo de pagamento).
+
+---
+
+**4. Valor (R$)**
+
+Campo numérico obrigatório que define o valor do preço para o mês/ano especificado.
+
+**Como ajustar:**
+- No modal de valores, o campo "Valor (R$)" é obrigatório
+- Digite o valor do preço em reais (ex: 2.50, 3.75)
+- O campo aceita valores decimais com até 4 casas decimais
+- Use ponto (.) como separador decimal
+- O valor deve ser positivo
+
+**Para que serve:**
+O valor é o preço de referência que será utilizado nos cálculos da folha de pagamento. Este valor é consultado pelo modelo de pagamento quando o elemento "Preço" é utilizado na fórmula de cálculo.
+
+**Como afeta o cálculo:**
+O valor é diretamente utilizado nos cálculos da folha de pagamento. Quando um modelo de pagamento utiliza o elemento "Preço" com uma tabela de preços, o sistema busca o valor correspondente ao ano/mês de referência e utiliza este valor na fórmula de cálculo. Por exemplo, se a fórmula for "Preço * Volume", o valor da tabela será multiplicado pelo volume do produtor.
+
+---
+
 ## Funcionalidades Adicionais
 
 ### Uso em Modelos de Pagamento

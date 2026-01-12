@@ -118,6 +118,47 @@ export async function processAngularTemplates(page, additionalData = {}) {
                 console.log('Módulo pay.tabelapreco criado');
             }
             
+            // Define the tabelapreco ListCtrl controller
+            appTabelaPreco.controller('tabelapreco.ListCtrl', [
+                '$scope',
+                function($scope) {
+                    console.log('tabelapreco.ListCtrl sendo inicializado...');
+                    // Use real data if provided, otherwise use mock data
+                    const recordsData = additionalData && additionalData.records ? additionalData.records : [
+                        { id: 1, codigo: '001', nome: 'Tabela Exemplo' }
+                    ];
+                    
+                    // Set data immediately
+                    $scope.records = JSON.parse(JSON.stringify(recordsData));
+                    $scope.service = { sort: null };
+                    $scope.filtro = { open: function() {} };
+                    $scope.paging = {};
+                    $scope.api = {
+                        find: function() { return Promise.resolve($scope.records); },
+                        remove: function(id, callback) { callback(true); }
+                    };
+                    $scope.remove = function(id) {
+                        $scope.records = $scope.records.filter(r => r.id !== id);
+                    };
+                    $scope.reloadData = function() {
+                        // Mock reload - just ensure records are set
+                        if (!$scope.records || $scope.records.length === 0) {
+                            $scope.records = JSON.parse(JSON.stringify(recordsData));
+                        }
+                    };
+                    
+                    console.log('tabelapreco.ListCtrl inicializado com', $scope.records.length, 'registros');
+                    if ($scope.records.length > 0) {
+                        console.log('Primeiro registro:', $scope.records[0]);
+                    }
+                    
+                    // Force immediate digest
+                    if (!$scope.$$phase && !$scope.$root.$$phase) {
+                        $scope.$apply();
+                    }
+                }
+            ]);
+            
             // Define the payment model controller
             appModelo.controller('modelopagamento.pagamentoFormulaCtrl', [
                 '$scope',
@@ -586,6 +627,94 @@ export async function processAngularTemplates(page, additionalData = {}) {
                 }
             ]);
             
+            // Define the tabelapreco ValorCtrl controller
+            appTabelaPreco.controller('tabelapreco.ValorCtrl', [
+                '$scope',
+                function($scope) {
+                    console.log('tabelapreco.ValorCtrl sendo inicializado...');
+                    // Use real data if provided
+                    const valoresData = additionalData && additionalData.valores ? additionalData.valores : [
+                        {
+                            id: 1,
+                            codigo: null,
+                            ano: 2025,
+                            mes: 10,
+                            valor: 2.45
+                        }
+                    ];
+                    const recordData = additionalData && additionalData.record ? additionalData.record : {
+                        id: 74,
+                        codigo: "002",
+                        nome: "Mercado"
+                    };
+                    
+                    // Set data immediately
+                    $scope.record = recordData;
+                    $scope.valores = valoresData;
+                    $scope.viewState = 'edit'; // Para mostrar botões de ação
+                    
+                    // Mock functions
+                    $scope.abreModalValor = function(valor) {};
+                    $scope.remove = function(id) {};
+                    $scope.reload = function() {};
+                    
+                    // Pagination
+                    $scope.currentPage = 1;
+                    $scope.pageSize = 10;
+                    $scope.totalFazendas = valoresData.length;
+                    
+                    console.log('tabelapreco.ValorCtrl inicializado com', valoresData.length, 'valores');
+                    console.log('Record:', recordData);
+                    
+                    // Force immediate digest
+                    if (!$scope.$$phase && !$scope.$root.$$phase) {
+                        $scope.$apply();
+                    }
+                }
+            ]);
+            
+            // Define the tabelapreco ValorModalCtrl controller
+            appTabelaPreco.controller('tabelapreco.ValorModalCtrl', [
+                '$scope',
+                function($scope) {
+                    console.log('tabelapreco.ValorModalCtrl sendo inicializado...');
+                    const registroData = additionalData && additionalData.registro ? JSON.parse(JSON.stringify(additionalData.registro)) : {
+                        codigo: "2025-10",
+                        ano: 2025,
+                        mes: 10,
+                        valor: 2.45
+                    };
+                    
+                    const recordData = additionalData && additionalData.record ? JSON.parse(JSON.stringify(additionalData.record)) : {
+                        id: 74,
+                        codigo: "002",
+                        nome: "Mercado"
+                    };
+                    
+                    $scope.registro = registroData;
+                    $scope.record = recordData;
+                    $scope.isCreate = !registroData.id;
+                    $scope.isEdit = !!registroData.id;
+                    $scope.isSubmited = false;
+                    $scope.forms = {
+                        modal: {}
+                    };
+                    
+                    // Mock functions
+                    $scope.save = function() {};
+                    $scope.cancel = function() {};
+                    
+                    console.log('tabelapreco.ValorModalCtrl inicializado');
+                    console.log('Record:', $scope.record);
+                    console.log('Registro:', $scope.registro);
+                    
+                    // Force immediate digest
+                    if (!$scope.$$phase && !$scope.$root.$$phase) {
+                        $scope.$apply();
+                    }
+                }
+            ]);
+            
             // Define the agreement adjustment controller
             appAjusteAcordo.controller('ajusteacordo.AcordoListCtrl', [
                 '$scope',
@@ -672,14 +801,14 @@ export async function processAngularTemplates(page, additionalData = {}) {
             if (!injector) {
                 try {
                     // Bootstrap with all modules including pay.imposto and pay.tabelapreco
-                    angular.bootstrap(body, ['pay.modelopagamento', 'pay.consolidacaoqualidade', 'pay.ajusteacordo', 'pay.imposto', 'pay.tabelapreco']);
+                    angular.bootstrap(body, ['pay.modelopagamento', 'pay.consolidacaoqualidade', 'pay.ajusteacordo', 'pay.imposto', 'pay.tabelapreco', 'ngMaterial']);
                     injector = angular.element(body).injector();
-                    console.log('AngularJS bootstrapped com módulos:', 'pay.modelopagamento', 'pay.consolidacaoqualidade', 'pay.ajusteacordo', 'pay.imposto', 'pay.tabelapreco');
+                    console.log('AngularJS bootstrapped com módulos:', 'pay.modelopagamento', 'pay.consolidacaoqualidade', 'pay.ajusteacordo', 'pay.imposto', 'pay.tabelapreco', 'ngMaterial');
                 } catch (e) {
                     console.warn('Erro ao fazer bootstrap do AngularJS:', e.message);
                     // Try without ajusteacordo module
                     try {
-                        angular.bootstrap(body, ['pay.modelopagamento', 'pay.consolidacaoqualidade', 'pay.imposto', 'pay.tabelapreco']);
+                        angular.bootstrap(body, ['pay.modelopagamento', 'pay.consolidacaoqualidade', 'pay.imposto', 'pay.tabelapreco', 'ngMaterial']);
                         injector = angular.element(body).injector();
                         console.log('AngularJS bootstrapped sem pay.ajusteacordo');
                     } catch (e2) {
@@ -753,10 +882,92 @@ export async function processAngularTemplates(page, additionalData = {}) {
                         });
                     }
                     
+                    // Apply valores data to ValorCtrl
+                    if (additionalData && additionalData.valores) {
+                        const valorElements = document.querySelectorAll('[ng-controller="tabelapreco.ValorCtrl"]');
+                        valorElements.forEach(element => {
+                            try {
+                                const scope = angular.element(element).scope();
+                                if (scope) {
+                                    scope.valores = JSON.parse(JSON.stringify(additionalData.valores));
+                                    if (additionalData.record) {
+                                        scope.record = JSON.parse(JSON.stringify(additionalData.record));
+                                    }
+                                    scope.viewState = 'edit';
+                                    scope.totalFazendas = additionalData.valores.length;
+                                    if (!scope.$$phase && !scope.$root.$$phase) {
+                                        scope.$apply();
+                                    }
+                                    console.log('Dados de valores aplicados imediatamente:', scope.valores.length, 'valores');
+                                }
+                            } catch (e) {
+                                console.warn('Erro ao aplicar valores imediatamente:', e.message);
+                            }
+                        });
+                        
+                        // Apply modal controller data if available
+                        const modalElements = document.querySelectorAll('[ng-controller="tabelapreco.ValorModalCtrl"]');
+                        modalElements.forEach(element => {
+                            try {
+                                const scope = angular.element(element).scope();
+                                if (scope) {
+                                    if (additionalData.registro) {
+                                        scope.registro = JSON.parse(JSON.stringify(additionalData.registro));
+                                    }
+                                    if (additionalData.record) {
+                                        scope.record = JSON.parse(JSON.stringify(additionalData.record));
+                                    }
+                                    scope.isCreate = !additionalData.registro || !additionalData.registro.id;
+                                    scope.isEdit = !!additionalData.registro && !!additionalData.registro.id;
+                                    scope.isSubmited = false;
+                                    if (!scope.$$phase && !scope.$root.$$phase) {
+                                        scope.$apply();
+                                    }
+                                    console.log('Dados do modal de valores aplicados imediatamente');
+                                }
+                            } catch (e) {
+                                console.warn('Erro ao aplicar dados do modal de valores imediatamente:', e.message);
+                            }
+                        });
+                    }
+                    
                     // Apply records data to list controllers
                     if ($rootScope && additionalData.records) {
                         // Apply data to root scope first (controllers might inherit from it)
                         $rootScope.$apply();
+                        
+                        // Apply data specifically to tabelapreco.ListCtrl
+                        const tabelaprecoListElements = document.querySelectorAll('[ng-controller="tabelapreco.ListCtrl"]');
+                        tabelaprecoListElements.forEach(element => {
+                            try {
+                                const scope = angular.element(element).scope();
+                                if (scope) {
+                                    scope.records = JSON.parse(JSON.stringify(additionalData.records));
+                                    scope.service = scope.service || { sort: null };
+                                    scope.filtro = scope.filtro || { open: function() {} };
+                                    scope.paging = scope.paging || {};
+                                    
+                                    // Recompile the element to ensure ng-repeat is processed
+                                    if ($compile) {
+                                        $compile(element)(scope);
+                                    }
+                                    
+                                    if (!scope.$$phase && !scope.$root.$$phase) {
+                                        scope.$apply();
+                                    }
+                                    console.log('Dados aplicados ao tabelapreco.ListCtrl:', scope.records.length, 'registros');
+                                    
+                                    // Force another digest after a short delay to ensure rendering
+                                    setTimeout(() => {
+                                        if (!scope.$$phase && !scope.$root.$$phase) {
+                                            scope.$apply();
+                                        }
+                                    }, 100);
+                                }
+                            } catch (e) {
+                                console.warn('Erro ao aplicar dados ao tabelapreco.ListCtrl:', e.message);
+                            }
+                        });
                         
                         // Apply data directly to list controllers
                         const listControllers = document.querySelectorAll('[ng-controller*="ListCtrl"]');
@@ -796,15 +1007,15 @@ export async function processAngularTemplates(page, additionalData = {}) {
                                     if (scope && !processedScopes.has(scope)) {
                                         processedScopes.add(scope);
                                         
-                                        // Check if element has ng-repeat with records
+                                        // Check if element has ng-repeat with records or valores
                                         const ngRepeat = element.getAttribute('ng-repeat');
-                                        if (ngRepeat && ngRepeat.includes('record in records')) {
+                                        if (ngRepeat && (ngRepeat.includes('record in records') || ngRepeat.includes('valor in valores'))) {
                                             // Walk up scope chain to find controller scope
                                             let currentScope = scope;
                                             let parentScope = scope.$parent;
                                             
                                             while (parentScope && parentScope !== currentScope.$root) {
-                                                if (parentScope.records !== undefined) {
+                                                if (parentScope.records !== undefined || parentScope.valores !== undefined) {
                                                     currentScope = parentScope;
                                                     break;
                                                 }
@@ -812,8 +1023,11 @@ export async function processAngularTemplates(page, additionalData = {}) {
                                                 parentScope = parentScope.$parent;
                                             }
                                             
-                                            if (currentScope && (!currentScope.records || currentScope.records.length === 0)) {
-                                                currentScope.records = JSON.parse(JSON.stringify(additionalData.records));
+                                            if (ngRepeat.includes('record in records') && currentScope) {
+                                                // Always set records if available, even if already set
+                                                if (additionalData.records) {
+                                                    currentScope.records = JSON.parse(JSON.stringify(additionalData.records));
+                                                }
                                                 if (currentScope.service === undefined) {
                                                     currentScope.service = { sort: null };
                                                 }
@@ -823,7 +1037,32 @@ export async function processAngularTemplates(page, additionalData = {}) {
                                                 if (currentScope.paging === undefined) {
                                                     currentScope.paging = {};
                                                 }
-                                                currentScope.$apply();
+                                                
+                                                // Recompile the parent tbody to ensure ng-repeat is processed
+                                                const tbody = element.closest('tbody');
+                                                if (tbody && $compile) {
+                                                    const tbodyScope = angular.element(tbody).scope();
+                                                    if (tbodyScope) {
+                                                        $compile(tbody)(tbodyScope);
+                                                    }
+                                                }
+                                                
+                                                if (!currentScope.$$phase && !currentScope.$root.$$phase) {
+                                                    currentScope.$apply();
+                                                }
+                                            } else if (ngRepeat.includes('valor in valores') && currentScope) {
+                                                if (additionalData.valores) {
+                                                    currentScope.valores = JSON.parse(JSON.stringify(additionalData.valores));
+                                                }
+                                                if (additionalData.record) {
+                                                    currentScope.record = JSON.parse(JSON.stringify(additionalData.record));
+                                                }
+                                                if (currentScope.viewState === undefined) {
+                                                    currentScope.viewState = 'edit';
+                                                }
+                                                if (!currentScope.$$phase && !currentScope.$root.$$phase) {
+                                                    currentScope.$apply();
+                                                }
                                             }
                                         }
                                     }
@@ -846,7 +1085,7 @@ export async function processAngularTemplates(page, additionalData = {}) {
         }, mockControllerData, additionalData);
         
         // Wait for AngularJS to process templates and ag-Grid to initialize
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 3000));
         
         // Force another digest cycle and ensure all controllers are initialized
         // Pass additionalData as a serializable object

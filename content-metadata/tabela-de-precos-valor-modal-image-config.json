@@ -1,0 +1,85 @@
+{
+  "pageName": "Tabela de Preços - Modal Valores",
+  "title": "Modal de Valores",
+  "description": "Modal para inclusão e edição de valores mensais",
+  "htmlPath": "/Applications/MAMP/htdocs/milks/web/src/secure/pay/tabelapreco/views/tabelapreco.valor.modal.html",
+  "outputImage": "content/tabela-de-precos-valor-modal.png",
+  "autoDetectElements": false,
+  "autoUpdateConfig": false,
+  "processAngularTemplates": true,
+  "elements": [
+    {
+      "selector": "#codigo",
+      "number": 1,
+      "label": "Código",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "#ano",
+      "number": 2,
+      "label": "Ano",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "#mes",
+      "number": 3,
+      "label": "Mês",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "#valor",
+      "number": 4,
+      "label": "Valor (R$)",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    }
+  ],
+  "database": {
+    "enabled": true,
+    "dataFile": "content-metadata/tabela-de-precos-valor-modal-data.json"
+  },
+  "fillData": {
+    "enabled": true,
+    "mappings": {
+      "#codigo": {
+        "field": "codigo",
+        "type": "text"
+      },
+      "#ano": {
+        "field": "ano",
+        "type": "text"
+      },
+      "#mes": {
+        "field": "mes",
+        "type": "text"
+      },
+      "#valor": {
+        "field": "valor",
+        "type": "text"
+      }
+    }
+  },
+  "renderOptions": {
+    "viewport": {
+      "width": 800,
+      "height": 600,
+      "deviceScaleFactor": 2
+    },
+    "waitForSelector": ".element-number-badge",
+    "waitTimeout": 10000,
+    "fallbackWait": 2000
+  },
+  "customStyles": ".modal { display: block !important; position: relative; } .modal-dialog { margin: 20px auto; width: 600px; } .modal-backdrop { display: none !important; } body { padding: 20px; background: #f5f5f5; } .modal-content { box-shadow: 0 5px 15px rgba(0,0,0,0.3); }",
+  "wrapInModal": true
+}

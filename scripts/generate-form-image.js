@@ -125,7 +125,7 @@ async function generateFormImage(config, databaseRecord = null) {
                 const dataContent = readFileSync(dataPath, 'utf-8');
                 const data = JSON.parse(dataContent);
                 
-                // Verificar se é estrutura de faixas (com imposto e faixas) ou lista simples
+                // Verificar se é estrutura de faixas (com imposto e faixas)
                 if (data.imposto && data.faixas) {
                     additionalData.imposto = data.imposto;
                     additionalData.faixas = Array.isArray(data.faixas) ? data.faixas : [data.faixas];
@@ -151,6 +151,37 @@ async function generateFormImage(config, databaseRecord = null) {
                             formHTML = formHTML.replace(/<div([^>]*class="[^"]*modal-body[^"]*")/i, '<div$1 ng-controller="imposto.FaixaModalCtrl"');
                         }
                         console.log('   ✅ Adicionado ng-controller="imposto.FaixaModalCtrl"');
+                    }
+                } else if (data.record && data.valores) {
+                    // Estrutura de valores (com record e valores)
+                    additionalData.record = data.record;
+                    additionalData.valores = Array.isArray(data.valores) ? data.valores : [data.valores];
+                    console.log(`   📊 Carregados dados da tabela "${data.record.nome}" com ${additionalData.valores.length} valores`);
+                    
+                    // Adicionar ng-controller para valores se não tiver
+                    if (!formHTML.includes('ng-controller="tabelapreco.ValorCtrl"') && formHTML.includes('ng-repeat="valor in valores"')) {
+                        // Adicionar ng-controller ao primeiro div com class wrapper-sm ou ng-controller
+                        formHTML = formHTML.replace(/<div([^>]*ng-controller="tabelapreco\.ValorCtrl"[^>]*class="[^"]*wrapper-sm[^"]*")/i, '<div$1');
+                        if (!formHTML.includes('ng-controller="tabelapreco.ValorCtrl"')) {
+                            formHTML = formHTML.replace(/<div([^>]*class="[^"]*wrapper-sm[^"]*")/i, '<div$1 ng-controller="tabelapreco.ValorCtrl"');
+                        }
+                        console.log('   ✅ Adicionado ng-controller="tabelapreco.ValorCtrl"');
+                    }
+                } else if (data.record && data.registro) {
+                    // Estrutura de modal de valores (com record e registro)
+                    additionalData.record = data.record;
+                    additionalData.registro = data.registro;
+                    console.log(`   📊 Carregados dados do modal para tabela "${data.record.nome}"`);
+                    
+                    // Adicionar ng-controller para modal de valores se não tiver
+                    if (!formHTML.includes('ng-controller="tabelapreco.ValorModalCtrl"') && formHTML.includes('ng-model="registro.')) {
+                        // Adicionar ng-controller ao form
+                        if (formHTML.includes('<form')) {
+                            formHTML = formHTML.replace(/<form([^>]*name="forms\.modal")/i, '<form$1 ng-controller="tabelapreco.ValorModalCtrl"');
+                        } else {
+                            formHTML = formHTML.replace(/<div([^>]*class="[^"]*modal-body[^"]*")/i, '<div$1 ng-controller="tabelapreco.ValorModalCtrl"');
+                        }
+                        console.log('   ✅ Adicionado ng-controller="tabelapreco.ValorModalCtrl"');
                     }
                 } else {
                     // Estrutura de lista simples (records)
@@ -215,7 +246,21 @@ async function generateFormImage(config, databaseRecord = null) {
     const title = config.title || config.pageName || 'Formulário';
     const customStyles = config.customStyles || '';
     const includeAngular = hasAngularTemplates && (config.processAngularTemplates !== false);
-    const initialHTML = createFullHTML(formHTML, title, [], customStyles, includeAngular);
+    const wrapInModal = config.wrapInModal === true;
+    
+    // Se for modal, envolver o HTML em estrutura de modal Bootstrap
+    let finalFormHTML = formHTML;
+    if (wrapInModal && !formHTML.includes('<div class="modal')) {
+        finalFormHTML = `<div class="modal" style="display: block; position: relative;">
+    <div class="modal-dialog" style="margin: 20px auto; width: 600px;">
+        <div class="modal-content">
+            ${formHTML}
+        </div>
+    </div>
+</div>`;
+    }
+    
+    const initialHTML = createFullHTML(finalFormHTML, title, [], customStyles, includeAngular);
     const tempHTMLPath = join(projectRoot, "temp-form.html");
     writeFileSync(tempHTMLPath, initialHTML, 'utf-8');
     console.log(`✅ HTML temporário criado: ${tempHTMLPath}`);
@@ -693,6 +738,7 @@ async function generateFormImage(config, databaseRecord = null) {
                     
                     console.log('Aplicando fallback preventivo: garantindo que interpolações estão resolvidas');
                     console.log('Tem interpolações não resolvidas?', hasUnresolved);
+                    console.log('additionalData.records:', additionalData.records ? additionalData.records.length : 0);
                     
                     // Replace record interpolations
                     if (additionalData.imposto) {
@@ -746,8 +792,27 @@ async function generateFormImage(config, databaseRecord = null) {
                                 tbody = body.querySelector('tbody');
                             }
                             
+                            // Also try to find md-table-container > table > tbody
+                            if (!tbody) {
+                                const mdTableContainer = body.querySelector('md-table-container');
+                                if (mdTableContainer) {
+                                    const table = mdTableContainer.querySelector('table');
+                                    if (table) {
+                                        tbody = table.querySelector('tbody[md-body]') || table.querySelector('tbody');
+                                    }
+                                }
+                            }
+                            
+                            // Also try to find table directly
+                            if (!tbody) {
+                                const table = body.querySelector('table[md-table]');
+                                if (table) {
+                                    tbody = table.querySelector('tbody[md-body]') || table.querySelector('tbody');
+                                }
+                            }
+                            
                             if (tbody) {
-                                console.log('Tbody encontrado');
+                                console.log('Tbody encontrado:', tbody.tagName, tbody.className);
                                 
                                 // Find the ng-repeat element (template row)
                                 let repeatElement = tbody.querySelector('tr[md-row][ng-repeat*="record in records"]');
