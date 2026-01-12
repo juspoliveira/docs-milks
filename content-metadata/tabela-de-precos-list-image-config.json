@@ -31,7 +31,7 @@
       }
     },
     {
-      "selector": "th[md-order-by='codigo']",
+      "selector": "thead th:first-of-type",
       "number": 3,
       "label": "Código",
       "position": {
@@ -40,7 +40,7 @@
       }
     },
     {
-      "selector": "th[md-order-by='nome']",
+      "selector": "thead th:nth-of-type(2)",
       "number": 4,
       "label": "Tabela",
       "position": {
@@ -49,7 +49,7 @@
       }
     },
     {
-      "selector": "td.action md-icon:first-of-type",
+      "selector": "td.action .action-icon:first-of-type",
       "number": 5,
       "label": "Visualizar",
       "position": {
@@ -58,7 +58,7 @@
       }
     },
     {
-      "selector": "td.action md-icon:nth-of-type(2)",
+      "selector": "td.action .action-icon:nth-of-type(2)",
       "number": 6,
       "label": "Editar",
       "position": {
@@ -67,7 +67,7 @@
       }
     },
     {
-      "selector": "td.action md-icon:last-of-type",
+      "selector": "td.action .action-icon:last-of-type",
       "number": 7,
       "label": "Excluir",
       "position": {

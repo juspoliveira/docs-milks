@@ -248,6 +248,180 @@ async function generateFormImage(config, databaseRecord = null) {
     const includeAngular = hasAngularTemplates && (config.processAngularTemplates !== false);
     const wrapInModal = config.wrapInModal === true;
     
+    // Função para converter Material Design para HTML padrão
+    function convertMaterialDesignToStandardHTML(html) {
+        // Converter md-table-container para div
+        html = html.replace(/<md-table-container>/g, '<div class="table-responsive">');
+        html = html.replace(/<\/md-table-container>/g, '</div>');
+        
+        // Converter md-table para table padrão
+        html = html.replace(/<table\s+md-table>/g, '<table class="table table-striped">');
+        
+        // Converter md-head para thead
+        html = html.replace(/<thead\s+md-head[^>]*>/g, '<thead>');
+        
+        // Converter md-body para tbody (manter todas as linhas já criadas)
+        html = html.replace(/<tbody\s+md-body[^>]*>/g, '<tbody>');
+        html = html.replace(/<tbody[^>]*>/g, '<tbody>'); // Também converter tbody sem md-body
+        
+        // Converter md-row para tr (remover atributo mas manter a tag)
+        html = html.replace(/<tr\s+md-row[^>]*>/g, (match) => {
+            // Remover apenas md-row, manter outros atributos
+            return match.replace(/\s+md-row/g, '');
+        });
+        
+        // Converter md-column para th (remover atributos md-* mas manter outros)
+        html = html.replace(/<th\s+md-column([^>]*)>/g, (match, attrs) => {
+            // Manter apenas atributos não-md
+            const cleanAttrs = attrs.replace(/\s+md-[^\s=]+(="[^"]*")?/g, '').trim();
+            return `<th${cleanAttrs ? ' ' + cleanAttrs : ''}>`;
+        });
+        
+        // Converter md-cell para td (remover atributo mas manter classe e outros atributos)
+        html = html.replace(/<td\s+md-cell([^>]*)>/g, (match, attrs) => {
+            // Remover md-cell mas manter outros atributos como class
+            const cleanAttrs = attrs.replace(/\s+md-cell/g, '').trim();
+            return `<td${cleanAttrs ? ' ' + cleanAttrs : ''}>`;
+        });
+        
+        // Converter md-icon para span com classe material-icons (já deve estar convertido no pré-processamento)
+        // Mas fazer novamente para garantir
+        html = html.replace(/<md-icon([^>]*)>([\s\S]*?)<\/md-icon>/g, (match, attrs, content) => {
+            // Remover atributos AngularJS que não são necessários para renderização
+            const cleanAttrs = attrs
+                .replace(/\s+ui-sref="[^"]*"/g, '')
+                .replace(/\s+ng-click="[^"]*"/g, '')
+                .replace(/\s+acl="[^"]*"/g, '')
+                .trim();
+            const iconContent = content.trim();
+            // Adicionar classe action-icon para facilitar seleção
+            const iconClass = 'material-icons action-icon';
+            return `<span class="${iconClass}"${cleanAttrs ? ' ' + cleanAttrs : ''} style="font-family: Material Icons; cursor: pointer; color: #666; display: inline-block; margin: 0 4px;">${iconContent}</span>`;
+        });
+        
+        return html;
+    }
+    
+    // Pre-processar HTML para criar linhas da tabela ANTES da conversão (Abordagem 2)
+    // Isso garante que o template seja encontrado antes da conversão remover atributos
+    if (additionalData.records && additionalData.records.length > 0 && formHTML.includes('ng-repeat="record in records"')) {
+        console.log('🔄 Pré-processando HTML para criar linhas da tabela...');
+        
+        // Encontrar o tbody que contém o ng-repeat (pode ser md-body ou não)
+        let tbodyStartRegex = /<tbody[^>]*md-body[^>]*>/;
+        let tbodyMatch = formHTML.match(tbodyStartRegex);
+        if (!tbodyMatch) {
+            // Tentar sem md-body
+            tbodyStartRegex = /<tbody[^>]*>/;
+            tbodyMatch = formHTML.match(tbodyStartRegex);
+        }
+        
+        if (tbodyMatch) {
+            const tbodyStartIndex = formHTML.indexOf(tbodyMatch[0]);
+            const tbodyStartTag = tbodyMatch[0];
+            
+            // Encontrar o conteúdo do tbody até o próximo </tbody>
+            let tbodyEndIndex = formHTML.indexOf('</tbody>', tbodyStartIndex);
+            if (tbodyEndIndex === -1) {
+                // Tentar encontrar qualquer </tbody>
+                tbodyEndIndex = formHTML.indexOf('</tbody>', tbodyStartIndex + tbodyStartTag.length);
+            }
+            
+            if (tbodyEndIndex !== -1) {
+                const tbodyContent = formHTML.substring(tbodyStartIndex + tbodyStartTag.length, tbodyEndIndex);
+                
+                // Encontrar o template de linha dentro do tbody
+                // Após conversão, pode ser <tr> ou <tr md-row>
+                const trStartRegex = /<tr[^>]*ng-repeat\s*=\s*["']record\s+in\s+records["'][^>]*>/;
+                let trMatch = tbodyContent.match(trStartRegex);
+                if (!trMatch) {
+                    // Tentar sem md-row (após conversão)
+                    const trStartRegex2 = /<tr[^>]*ng-repeat[^>]*record[^>]*in[^>]*records[^>]*>/;
+                    trMatch = tbodyContent.match(trStartRegex2);
+                }
+                
+                if (trMatch) {
+                    const trStartIndex = tbodyContent.indexOf(trMatch[0]);
+                    const trStartTag = trMatch[0];
+                    
+                    // Encontrar o fechamento desta linha </tr>
+                    const trEndIndex = tbodyContent.indexOf('</tr>', trStartIndex);
+                    
+                    if (trEndIndex !== -1) {
+                        const templateRow = tbodyContent.substring(trStartIndex, trEndIndex + 5); // +5 para incluir </tr>
+                        console.log('Template row encontrado, tamanho:', templateRow.length);
+                        console.log('Template row completo:', templateRow);
+                        
+                        let rowsHTML = '';
+                        
+                        additionalData.records.forEach((record, index) => {
+                            // Fazer substituições preservando toda a estrutura
+                            let rowHTML = templateRow;
+                            
+                            // Remover ng-repeat primeiro
+                            rowHTML = rowHTML.replace(/ng-repeat\s*=\s*["'][^"']*["']/g, '');
+                            
+                            // Substituir interpolações - usar replace global para pegar todas as ocorrências
+                            rowHTML = rowHTML.replace(/\{\{record\.codigo\}\}/g, record.codigo || '');
+                            rowHTML = rowHTML.replace(/\{\{record\.nome\s*\|\s*uppercase\}\}/g, (record.nome || '').toUpperCase());
+                            rowHTML = rowHTML.replace(/\{\{record\.nome\}\}/g, record.nome || '');
+                            rowHTML = rowHTML.replace(/\{\{record\.id\}\}/g, record.id || '');
+                            
+                            // Substituir interpolações dentro de atributos (ex: ui-sref)
+                            rowHTML = rowHTML.replace(/\{id:\s*record\.id\}/g, `{id: ${record.id}}`);
+                            
+                            // Converter md-icon para span.material-icons.action-icon no pré-processamento
+                            // Usar regex mais robusto que captura múltiplas linhas
+                            rowHTML = rowHTML.replace(/<md-icon([^>]*)>([\s\S]*?)<\/md-icon>/g, (match, attrs, content) => {
+                                const cleanAttrs = attrs
+                                    .replace(/\s+ui-sref="[^"]*"/g, '')
+                                    .replace(/\s+ng-click="[^"]*"/g, '')
+                                    .replace(/\s+acl="[^"]*"/g, '')
+                                    .trim();
+                                const iconContent = content.trim();
+                                return `<span class="material-icons action-icon"${cleanAttrs ? ' ' + cleanAttrs : ''} style="font-family: Material Icons; cursor: pointer; color: #666; display: inline-block; margin: 0 4px;">${iconContent}</span>`;
+                            });
+                            
+                            rowsHTML += rowHTML;
+                        });
+                        
+                        // Substituir o conteúdo do tbody: manter a tag de abertura, substituir o conteúdo, manter a tag de fechamento
+                        const newTbodyContent = rowsHTML;
+                        const beforeTbody = formHTML.substring(0, tbodyStartIndex + tbodyStartTag.length);
+                        const afterTbody = formHTML.substring(tbodyEndIndex);
+                        formHTML = beforeTbody + newTbodyContent + afterTbody;
+                        
+                        // Remover o tbody com ng-if="records.length == 0" se existir
+                        formHTML = formHTML.replace(/<tbody[^>]*ng-if\s*=\s*["']records\.length\s*==\s*0["'][^>]*>[\s\S]*?<\/tbody>/g, '');
+                        
+                        console.log(`✅ Criadas ${additionalData.records.length} linhas no HTML`);
+                        console.log(`Primeira linha (primeiros 400 chars): ${rowsHTML.substring(0, 400)}`);
+                    } else {
+                        console.log('⚠️ Fechamento </tr> não encontrado no template');
+                    }
+                } else {
+                    console.log('⚠️ Template row com ng-repeat não encontrado no tbody');
+                }
+            } else {
+                console.log('⚠️ Fechamento </tbody> não encontrado');
+            }
+        } else {
+            console.log('⚠️ Tbody não encontrado');
+        }
+    }
+    
+    // Converter Material Design para HTML padrão DEPOIS do pré-processamento (Abordagem 1)
+    // Isso garante que as linhas já foram criadas antes da conversão
+    if (formHTML.includes('md-table') || formHTML.includes('md-icon') || formHTML.includes('md-row') || formHTML.includes('md-cell')) {
+        console.log('🔄 Convertendo elementos Material Design para HTML padrão (após pré-processamento)...');
+        formHTML = convertMaterialDesignToStandardHTML(formHTML);
+        // Verificar se ainda há elementos Material Design
+        if (formHTML.includes('md-')) {
+            console.log('⚠️ Ainda há elementos Material Design após conversão, tentando novamente...');
+            formHTML = convertMaterialDesignToStandardHTML(formHTML);
+        }
+    }
+    
     // Se for modal, envolver o HTML em estrutura de modal Bootstrap
     let finalFormHTML = formHTML;
     if (wrapInModal && !formHTML.includes('<div class="modal')) {
@@ -259,6 +433,8 @@ async function generateFormImage(config, databaseRecord = null) {
     </div>
 </div>`;
     }
+    
+    // A conversão já foi feita após o pré-processamento, então não precisa fazer novamente
     
     const initialHTML = createFullHTML(finalFormHTML, title, [], customStyles, includeAngular);
     const tempHTMLPath = join(projectRoot, "temp-form.html");
@@ -650,6 +826,55 @@ async function generateFormImage(config, databaseRecord = null) {
                 console.log('   - Linhas na tabela:', finalCheck.hasRows, '| Contagem:', finalCheck.rowCount);
                 console.log('   - Linhas com dados:', finalCheck.rowHasData);
                 
+                // Garantir que as linhas da tabela estejam visíveis
+                await page.evaluate((additionalData) => {
+                    const body = document.body;
+                    
+                    // Verificar se há linhas na tabela
+                    const tbody = body.querySelector('tbody');
+                    if (tbody) {
+                        const rows = tbody.querySelectorAll('tr');
+                        console.log('Linhas encontradas no tbody:', rows.length);
+                        
+                        // Se não há linhas mas há dados, criar as linhas novamente
+                        if (rows.length === 0 && additionalData.records && additionalData.records.length > 0) {
+                            console.log('Nenhuma linha encontrada, criando linhas manualmente...');
+                            
+                            additionalData.records.forEach(record => {
+                                const tr = document.createElement('tr');
+                                
+                                const td1 = document.createElement('td');
+                                td1.textContent = record.codigo || '';
+                                tr.appendChild(td1);
+                                
+                                const td2 = document.createElement('td');
+                                td2.textContent = (record.nome || '').toUpperCase();
+                                tr.appendChild(td2);
+                                
+                                const td3 = document.createElement('td');
+                                td3.className = 'action';
+                                td3.innerHTML = `
+                                    <span class="material-icons action-icon" style="font-family: Material Icons; cursor: pointer; color: #666; display: inline-block; margin: 0 4px;">visibility</span>
+                                    <span class="material-icons action-icon" style="font-family: Material Icons; cursor: pointer; color: #666; display: inline-block; margin: 0 4px;">edit</span>
+                                    <span class="material-icons action-icon" style="font-family: Material Icons; cursor: pointer; color: #666; display: inline-block; margin: 0 4px;">delete</span>
+                                `;
+                                tr.appendChild(td3);
+                                
+                                tbody.appendChild(tr);
+                            });
+                            
+                            console.log('Linhas criadas:', additionalData.records.length);
+                        }
+                        
+                        // Garantir que todas as linhas sejam visíveis
+                        rows.forEach(row => {
+                            row.style.display = 'table-row';
+                            row.style.visibility = 'visible';
+                            row.style.opacity = '1';
+                        });
+                    }
+                }, additionalData);
+                
                 // Force one more application with aggressive re-compilation
                 await page.evaluate((additionalData) => {
                     const body = document.body;
@@ -721,6 +946,167 @@ async function generateFormImage(config, databaseRecord = null) {
                 await new Promise(resolve => setTimeout(resolve, 1500));
             } else {
                 console.log('✅ Verificação final: tudo OK');
+            }
+            
+            // Garantir que as linhas da tabela estejam visíveis ANTES do fallback
+            if (additionalData.records && additionalData.records.length > 0) {
+                await page.evaluate((additionalData) => {
+                    const body = document.body;
+                    
+                    // Procurar tbody de várias formas
+                    let tbody = body.querySelector('tbody');
+                    if (!tbody) {
+                        const table = body.querySelector('table');
+                        if (table) {
+                            tbody = table.querySelector('tbody');
+                        }
+                    }
+                    if (!tbody) {
+                        const tableContainer = body.querySelector('.table-responsive');
+                        if (tableContainer) {
+                            const table = tableContainer.querySelector('table');
+                            if (table) {
+                                tbody = table.querySelector('tbody');
+                            }
+                        }
+                    }
+                    
+                    if (tbody) {
+                        const rows = tbody.querySelectorAll('tr');
+                        console.log('Verificação final: Linhas encontradas no tbody:', rows.length);
+                        
+                        // Se não há linhas ou há menos linhas que o esperado, criar/recriar
+                        if (rows.length < additionalData.records.length) {
+                            console.log('Recriando linhas da tabela...');
+                            
+                            // Remover linhas existentes (exceto cabeçalho se houver)
+                            rows.forEach(row => {
+                                // Não remover se for cabeçalho (tem th)
+                                if (!row.querySelector('th')) {
+                                    row.remove();
+                                }
+                            });
+                            
+                            // Criar novas linhas
+                            additionalData.records.forEach(record => {
+                                const tr = document.createElement('tr');
+                                
+                                const td1 = document.createElement('td');
+                                td1.textContent = record.codigo || '';
+                                tr.appendChild(td1);
+                                
+                                const td2 = document.createElement('td');
+                                td2.textContent = (record.nome || '').toUpperCase();
+                                tr.appendChild(td2);
+                                
+                                const td3 = document.createElement('td');
+                                td3.className = 'action';
+                                td3.innerHTML = `
+                                    <span class="material-icons action-icon" style="font-family: Material Icons; cursor: pointer; color: #666; display: inline-block; margin: 0 4px;">visibility</span>
+                                    <span class="material-icons action-icon" style="font-family: Material Icons; cursor: pointer; color: #666; display: inline-block; margin: 0 4px;">edit</span>
+                                    <span class="material-icons action-icon" style="font-family: Material Icons; cursor: pointer; color: #666; display: inline-block; margin: 0 4px;">delete</span>
+                                `;
+                                tr.appendChild(td3);
+                                
+                                // Garantir visibilidade
+                                tr.style.display = 'table-row';
+                                tr.style.visibility = 'visible';
+                                tr.style.opacity = '1';
+                                
+                                tbody.appendChild(tr);
+                            });
+                            
+                            console.log('Linhas recriadas:', additionalData.records.length);
+                        } else {
+                            // Garantir que todas as linhas existentes sejam visíveis
+                            rows.forEach(row => {
+                                if (!row.querySelector('th')) { // Não é cabeçalho
+                                    row.style.display = 'table-row';
+                                    row.style.visibility = 'visible';
+                                    row.style.opacity = '1';
+                                }
+                            });
+                        }
+                    } else {
+                        console.log('Tbody não encontrado na verificação final');
+                    }
+                }, additionalData);
+                
+                // Aguardar um pouco para garantir renderização
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
+            // Verificação final ANTES do screenshot - garantir que as linhas estejam visíveis
+            if (additionalData.records && additionalData.records.length > 0) {
+                console.log('🔍 Verificação final antes do screenshot...');
+                await page.evaluate((additionalData) => {
+                    const body = document.body;
+                    
+                    // Procurar tbody
+                    let tbody = body.querySelector('tbody');
+                    if (!tbody) {
+                        const table = body.querySelector('table.table, table[class*="table"]');
+                        if (table) {
+                            tbody = table.querySelector('tbody');
+                        }
+                    }
+                    
+                    if (tbody) {
+                        const rows = Array.from(tbody.querySelectorAll('tr')).filter(row => !row.querySelector('th'));
+                        console.log('Linhas de dados encontradas:', rows.length);
+                        
+                        if (rows.length === 0 || rows.length < additionalData.records.length) {
+                            console.log('Criando linhas diretamente no DOM...');
+                            
+                            // Limpar linhas existentes (exceto cabeçalho)
+                            rows.forEach(row => row.remove());
+                            
+                            // Criar linhas
+                            additionalData.records.forEach(record => {
+                                const tr = document.createElement('tr');
+                                tr.style.display = 'table-row';
+                                tr.style.visibility = 'visible';
+                                tr.style.opacity = '1';
+                                
+                                const td1 = document.createElement('td');
+                                td1.textContent = record.codigo || '';
+                                tr.appendChild(td1);
+                                
+                                const td2 = document.createElement('td');
+                                td2.textContent = (record.nome || '').toUpperCase();
+                                tr.appendChild(td2);
+                                
+                                const td3 = document.createElement('td');
+                                td3.className = 'action';
+                                td3.style.textAlign = 'right';
+                                td3.innerHTML = `
+                                    <span class="material-icons action-icon" style="font-family: Material Icons; cursor: pointer; color: #666; display: inline-block; margin: 0 4px; font-size: 24px;">visibility</span>
+                                    <span class="material-icons action-icon" style="font-family: Material Icons; cursor: pointer; color: #666; display: inline-block; margin: 0 4px; font-size: 24px;">edit</span>
+                                    <span class="material-icons action-icon" style="font-family: Material Icons; cursor: pointer; color: #666; display: inline-block; margin: 0 4px; font-size: 24px;">delete</span>
+                                `;
+                                tr.appendChild(td3);
+                                
+                                tbody.appendChild(tr);
+                            });
+                            
+                            console.log('Linhas criadas:', additionalData.records.length);
+                        }
+                        
+                        // Garantir que todas as linhas sejam visíveis
+                        const allRows = tbody.querySelectorAll('tr');
+                        allRows.forEach(row => {
+                            if (!row.querySelector('th')) {
+                                row.style.display = 'table-row';
+                                row.style.visibility = 'visible';
+                                row.style.opacity = '1';
+                                row.style.height = 'auto';
+                            }
+                        });
+                    }
+                }, additionalData);
+                
+                // Aguardar renderização
+                await new Promise(resolve => setTimeout(resolve, 300));
             }
             
             // Fallback: Always replace interpolations directly in DOM as safety measure
@@ -1021,10 +1407,161 @@ async function generateFormImage(config, databaseRecord = null) {
         }
     }
     
+    // Verificação final ULTIMA antes do screenshot - converter elementos Material Design que ainda existem
+    if (additionalData.records && additionalData.records.length > 0) {
+        console.log('🔍 Verificação ULTIMA antes do screenshot...');
+        const finalCheck = await page.evaluate((additionalData) => {
+            const body = document.body;
+            
+            // Converter elementos Material Design que ainda existem no DOM
+            // Converter md-row para remover atributo
+            body.querySelectorAll('tr[md-row]').forEach(tr => {
+                tr.removeAttribute('md-row');
+                tr.style.display = 'table-row';
+                tr.style.visibility = 'visible';
+                tr.style.opacity = '1';
+            });
+            
+            // Converter md-cell para remover atributo
+            body.querySelectorAll('td[md-cell]').forEach(td => {
+                td.removeAttribute('md-cell');
+            });
+            
+            // Converter md-icon para span.material-icons
+            body.querySelectorAll('md-icon').forEach(icon => {
+                const content = icon.textContent.trim();
+                const span = document.createElement('span');
+                span.className = 'material-icons action-icon';
+                span.textContent = content;
+                span.style.cssText = 'font-family: Material Icons; cursor: pointer; color: #666; display: inline-block; margin: 0 4px; font-size: 24px; line-height: 1;';
+                icon.parentNode.replaceChild(span, icon);
+            });
+            
+            // Procurar tbody
+            let tbody = body.querySelector('tbody');
+            if (!tbody) {
+                const table = body.querySelector('table.table, table[class*="table"]');
+                if (table) {
+                    tbody = table.querySelector('tbody');
+                }
+            }
+            
+            if (tbody) {
+                const rows = Array.from(tbody.querySelectorAll('tr')).filter(row => !row.querySelector('th'));
+                console.log('Linhas encontradas antes do screenshot:', rows.length);
+                
+                // Garantir que todas as linhas sejam visíveis
+                rows.forEach(row => {
+                    row.style.display = 'table-row';
+                    row.style.visibility = 'visible';
+                    row.style.opacity = '1';
+                    row.style.height = 'auto';
+                });
+                
+                if (rows.length === 0 || rows.length < additionalData.records.length) {
+                    console.log('Criando/recriando linhas agora...');
+                    
+                    // Remover linhas existentes (exceto cabeçalho)
+                    rows.forEach(row => row.remove());
+                    
+                    // Criar linhas diretamente
+                    additionalData.records.forEach(record => {
+                        const tr = document.createElement('tr');
+                        tr.style.cssText = 'display: table-row !important; visibility: visible !important; opacity: 1 !important; height: auto !important;';
+                        
+                        const td1 = document.createElement('td');
+                        td1.textContent = record.codigo || '';
+                        td1.style.cssText = 'padding: 12px; border-bottom: 1px solid #eee;';
+                        tr.appendChild(td1);
+                        
+                        const td2 = document.createElement('td');
+                        td2.textContent = (record.nome || '').toUpperCase();
+                        td2.style.cssText = 'padding: 12px; border-bottom: 1px solid #eee;';
+                        tr.appendChild(td2);
+                        
+                        const td3 = document.createElement('td');
+                        td3.className = 'action';
+                        td3.style.cssText = 'padding: 12px; border-bottom: 1px solid #eee; text-align: right; white-space: nowrap;';
+                        td3.innerHTML = `
+                            <span class="material-icons action-icon" style="font-family: Material Icons; cursor: pointer; color: #666; display: inline-block; margin: 0 4px; font-size: 24px; line-height: 1;">visibility</span>
+                            <span class="material-icons action-icon" style="font-family: Material Icons; cursor: pointer; color: #666; display: inline-block; margin: 0 4px; font-size: 24px; line-height: 1;">edit</span>
+                            <span class="material-icons action-icon" style="font-family: Material Icons; cursor: pointer; color: #666; display: inline-block; margin: 0 4px; font-size: 24px; line-height: 1;">delete</span>
+                        `;
+                        tr.appendChild(td3);
+                        
+                        tbody.appendChild(tr);
+                    });
+                    
+                    return { created: additionalData.records.length, found: 0, converted: true };
+                }
+                
+                return { created: 0, found: rows.length, converted: true };
+            }
+            
+            return { created: 0, found: 0, error: 'Tbody não encontrado' };
+        }, additionalData);
+        
+        console.log('Resultado da verificação final:', finalCheck);
+        
+        if (finalCheck.created > 0) {
+            console.log(`✅ ${finalCheck.created} linhas criadas na verificação final`);
+        }
+        
+        // Aguardar renderização
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    
+    // Debug final: verificar HTML antes do screenshot e garantir que tudo está visível
+    if (additionalData.records && additionalData.records.length > 0) {
+        const debugInfo = await page.evaluate((additionalData) => {
+            const body = document.body;
+            const tbody = body.querySelector('tbody');
+            if (tbody) {
+                const rows = Array.from(tbody.querySelectorAll('tr')).filter(row => !row.querySelector('th'));
+                
+                // Garantir que todas as linhas sejam visíveis com estilos inline
+                rows.forEach(row => {
+                    row.style.cssText = 'display: table-row !important; visibility: visible !important; opacity: 1 !important; height: auto !important;';
+                    Array.from(row.querySelectorAll('td')).forEach(td => {
+                        td.style.cssText = 'padding: 12px; border-bottom: 1px solid #eee; display: table-cell !important; visibility: visible !important;';
+                    });
+                });
+                
+                // Garantir que a tabela seja visível
+                const table = tbody.closest('table');
+                if (table) {
+                    table.style.cssText = 'width: 100%; border-collapse: collapse; display: table !important; visibility: visible !important;';
+                }
+                
+                // Garantir que o tbody seja visível
+                tbody.style.cssText = 'display: table-row-group !important; visibility: visible !important;';
+                
+                return {
+                    tbodyFound: true,
+                    rowCount: rows.length,
+                    firstRowHTML: rows.length > 0 ? rows[0].outerHTML.substring(0, 200) : 'N/A',
+                    tbodyHTML: tbody.innerHTML.substring(0, 500),
+                    allRowsVisible: rows.every(row => {
+                        const style = window.getComputedStyle(row);
+                        return style.display === 'table-row' && style.visibility === 'visible';
+                    })
+                };
+            }
+            return { tbodyFound: false };
+        }, additionalData);
+        console.log('🔍 Debug final - HTML da tabela:', JSON.stringify(debugInfo, null, 2));
+        
+        if (!debugInfo.allRowsVisible) {
+            console.log('⚠️ Algumas linhas não estão visíveis, aplicando correções...');
+        }
+    }
+    
     // Capturar screenshot
+    const outputPath = resolve(projectRoot, config.outputImage);
     console.log("📸 Capturando screenshot...");
+    console.log("📁 Caminho de saída:", outputPath);
     await page.screenshot({
-        path: config.outputImage,
+        path: outputPath,
         fullPage: true,
         type: 'png'
     });

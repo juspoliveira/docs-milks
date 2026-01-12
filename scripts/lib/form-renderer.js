@@ -198,6 +198,40 @@ export function createFullHTML(formHTML, title = 'Formulário', elements = [], c
         td.action md-icon {
             margin: 0 4px;
         }
+        /* Estilos para tabela padrão (após conversão) */
+        .table-responsive {
+            overflow-x: auto;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 0;
+        }
+        .table th {
+            text-align: left;
+            font-weight: bold;
+            padding: 12px;
+            border-bottom: 2px solid #ddd;
+            background-color: #f8f9fa;
+        }
+        .table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            vertical-align: middle;
+        }
+        .table tbody tr {
+            display: table-row !important;
+            visibility: visible !important;
+        }
+        .table tbody tr:hover {
+            background-color: #f5f5f5;
+        }
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: #f9f9f9;
+        }
+        .table-striped tbody tr:nth-of-type(even) {
+            background-color: #fff;
+        }
         ${customStyles}
     </style>
 </head>
