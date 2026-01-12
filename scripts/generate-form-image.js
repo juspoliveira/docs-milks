@@ -637,15 +637,102 @@ async function generateFormImage(config, databaseRecord = null) {
     // Adicionar badges numerados DEPOIS de tudo estar processado
     if (elements.length > 0) {
         console.log("🔢 Adicionando badges numerados...");
+        
+        // Garantir que todos os md-icon sejam convertidos ANTES de adicionar badges
+        const conversionResult = await page.evaluate(() => {
+            const body = document.body;
+            const mdIcons = body.querySelectorAll('md-icon');
+            console.log('🔍 Convertendo', mdIcons.length, 'ícones md-icon antes de adicionar badges...');
+            
+            let convertedCount = 0;
+            mdIcons.forEach((icon, index) => {
+                const content = icon.textContent.trim();
+                const span = document.createElement('span');
+                span.className = 'material-icons action-icon';
+                span.textContent = content;
+                span.style.cssText = 'font-family: Material Icons; cursor: pointer; color: #666; display: inline-block; margin: 0 4px; font-size: 24px; line-height: 1;';
+                if (icon.parentNode) {
+                    icon.parentNode.replaceChild(span, icon);
+                    convertedCount++;
+                    console.log(`✅ Ícone ${index + 1} convertido: ${content}`);
+                }
+            });
+            
+            // Verificar quantos action-icon existem após conversão
+            const actionIcons = body.querySelectorAll('.action-icon');
+            console.log('📊 Total de action-icon após conversão:', actionIcons.length);
+            
+            // Verificar especificamente na primeira linha
+            const firstActionCell = body.querySelector('td.action');
+            let iconsInFirstCell = 0;
+            if (firstActionCell) {
+                const icons = firstActionCell.querySelectorAll('.action-icon');
+                iconsInFirstCell = icons.length;
+                console.log('📊 Ícones na primeira célula action:', iconsInFirstCell);
+                icons.forEach((icon, idx) => {
+                    console.log(`   Ícone ${idx + 1}: "${icon.textContent.trim()}"`);
+                });
+            } else {
+                console.log('⚠️ Primeira célula action não encontrada');
+            }
+            
+            console.log('✅ Conversão de ícones concluída');
+            return { converted: convertedCount, total: actionIcons.length, inFirstCell: iconsInFirstCell };
+        });
+        
+        console.log('📊 Resultado da conversão:', conversionResult);
+        
+        // Aguardar um pouco para garantir que a conversão foi aplicada
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+        console.log('🔢 Iniciando adição de badges...');
+        console.log(`📋 Total de elementos para processar: ${elements.length}`);
+        
         const badgesAdded = await page.evaluate((elementsConfig) => {
+            console.log('🔢 Dentro do page.evaluate - processando badges...');
+            console.log(`📋 Total de elementos: ${elementsConfig.length}`);
             // Remover badges existentes se houver
             document.querySelectorAll('.element-number-badge').forEach(badge => badge.remove());
             
             let addedCount = 0;
             const results = [];
+            const debugInfo = [];
             
             elementsConfig.forEach((element) => {
-                let el = document.querySelector(element.selector);
+                let el = null;
+                let debugMsg = '';
+                
+                // Para action-icon, sempre usar abordagem direta (não confiar em :first-of-type, etc)
+                if (element.selector.includes('action-icon')) {
+                    debugMsg = `Badge ${element.number}: selector="${element.selector}"`;
+                    
+                    // Encontrar a primeira célula action na primeira linha da tabela
+                    const firstActionCell = document.querySelector('tbody tr:first-child td.action, tbody tr td.action');
+                    if (firstActionCell) {
+                        const allIcons = Array.from(firstActionCell.querySelectorAll('.action-icon, span.material-icons'));
+                        debugMsg += ` | Encontrados ${allIcons.length} ícones`;
+                        
+                        if (element.selector.includes('first-of-type') || element.number === 5) {
+                            el = allIcons[0] || null;
+                            debugMsg += ` | Primeiro: ${el ? `"${el.textContent.trim()}"` : 'não encontrado'}`;
+                        } else if (element.selector.includes('nth-of-type(2)') || element.number === 6) {
+                            el = allIcons[1] || null;
+                            debugMsg += ` | Segundo: ${el ? `"${el.textContent.trim()}"` : 'não encontrado'}`;
+                        } else if (element.selector.includes('last-of-type') || element.number === 7) {
+                            el = allIcons[allIcons.length - 1] || null;
+                            debugMsg += ` | Último: ${el ? `"${el.textContent.trim()}"` : 'não encontrado'}`;
+                        }
+                    } else {
+                        debugMsg += ` | ⚠️ Célula action não encontrada`;
+                    }
+                } else {
+                    // Para outros elementos, usar o seletor original
+                    el = document.querySelector(element.selector);
+                }
+                
+                if (element.number >= 5 && element.number <= 7) {
+                    debugInfo.push(debugMsg);
+                }
                 
                 // Se não encontrou, tentar alternativas
                 if (!el && element.selector.includes('ui-sortable')) {
@@ -661,9 +748,26 @@ async function generateFormImage(config, databaseRecord = null) {
                     const tagName = el.tagName.toLowerCase();
                     const isCheckbox = tagName === 'input' && el.type === 'checkbox';
                     const isInput = tagName === 'input' || tagName === 'select' || tagName === 'textarea';
+                    const isActionIcon = el.classList.contains('action-icon') || el.classList.contains('material-icons');
                     
-                    // Para inputs, usar o form-group como container
-                    if (isInput && !isCheckbox) {
+                    // Para action-icon, usar o próprio elemento como container (não o td.action)
+                    if (isActionIcon) {
+                        container = el;
+                        // Garantir que o ícone tenha position relative para o badge aparecer
+                        // SEMPRE aplicar, mesmo se já tiver position relative
+                        el.style.position = 'relative';
+                        el.style.display = 'inline-block';
+                        el.style.overflow = 'visible';
+                        el.style.zIndex = '1';
+                        
+                        // Também garantir que o td.action tenha position relative
+                        const actionCell = el.closest('td.action');
+                        if (actionCell) {
+                            actionCell.style.position = 'relative';
+                            actionCell.style.overflow = 'visible';
+                        }
+                    } else if (isInput && !isCheckbox) {
+                        // Para inputs, usar o form-group como container
                         const formGroup = el.closest('.form-group');
                         if (formGroup) {
                             container = formGroup;
@@ -683,11 +787,32 @@ async function generateFormImage(config, databaseRecord = null) {
                     }
                     
                     // Garantir que containers pais tenham overflow visible
+                    // Especialmente importante para badges em ícones dentro de tabelas
+                    if (isActionIcon) {
+                        // Para action-icon, garantir overflow visible em todos os containers da tabela
+                        const actionCell = el.closest('td.action');
+                        const tbody = el.closest('tbody');
+                        const table = el.closest('table');
+                        const tableContainer = el.closest('md-table-container, .table-responsive');
+                        const panel = el.closest('.panel');
+                        
+                        [actionCell, tbody, table, tableContainer, panel].forEach(container => {
+                            if (container) {
+                                container.style.overflow = 'visible';
+                                container.style.overflowX = 'visible';
+                                container.style.overflowY = 'visible';
+                            }
+                        });
+                    }
+                    
+                    // Verificação geral para todos os containers pais
                     let parent = container.parentElement;
                     while (parent && parent !== document.body) {
                         const parentStyle = window.getComputedStyle(parent);
-                        if (parentStyle.overflow === 'hidden' || parentStyle.overflowY === 'hidden') {
+                        if (parentStyle.overflow === 'hidden' || parentStyle.overflowY === 'hidden' || parentStyle.overflowX === 'hidden') {
                             parent.style.overflow = 'visible';
+                            parent.style.overflowX = 'visible';
+                            parent.style.overflowY = 'visible';
                         }
                         parent = parent.parentElement;
                     }
@@ -701,7 +826,26 @@ async function generateFormImage(config, databaseRecord = null) {
                     const position = element.position || {};
                     
                     // Posicionar badges de forma que fiquem visíveis
-                    if (isCheckbox) {
+                    if (isActionIcon) {
+                        // Para action-icon, posicionar no canto superior direito do ícone
+                        // Usar posição mais próxima do ícone para evitar corte por overflow
+                        badge.style.top = position.top || '-5px';
+                        badge.style.right = position.right || '-5px';
+                        badge.style.left = 'auto';
+                        badge.style.bottom = 'auto';
+                        badge.style.width = '24px';
+                        badge.style.height = '24px';
+                        badge.style.fontSize = '14px';
+                        badge.style.fontWeight = 'bold';
+                        badge.style.lineHeight = '24px';
+                        badge.style.zIndex = '10000';
+                        badge.style.backgroundColor = '#ff4444';
+                        badge.style.color = '#ffffff';
+                        badge.style.borderRadius = '50%';
+                        badge.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+                        badge.style.pointerEvents = 'none'; // Não interferir com cliques
+                        badge.style.border = '2px solid white'; // Melhorar visibilidade
+                    } else if (isCheckbox) {
                         // Para checkbox, posicionar ao lado esquerdo
                         badge.style.top = '0px';
                         badge.style.left = '-35px';
@@ -729,14 +873,41 @@ async function generateFormImage(config, databaseRecord = null) {
                     badge.style.opacity = '1';
                     
                     container.appendChild(badge);
+                    
+                    // Verificação de visibilidade para badges 5-7 (ícones) - fazer de forma síncrona
+                    if (isActionIcon && element.number >= 5 && element.number <= 7) {
+                        // Forçar reflow para garantir que o badge foi renderizado
+                        void badge.offsetHeight;
+                        
+                        const rect = badge.getBoundingClientRect();
+                        const isVisible = rect.width > 0 && rect.height > 0;
+                        
+                        if (!isVisible || rect.width === 0 || rect.height === 0) {
+                            // Se não estiver visível, tentar ajustar posicionamento
+                            badge.style.top = '0px';
+                            badge.style.right = '0px';
+                            // Forçar reflow novamente
+                            void badge.offsetHeight;
+                        }
+                        
+                        const finalRect = badge.getBoundingClientRect();
+                        debugInfo.push(`Badge ${element.number} final: width=${finalRect.width}, height=${finalRect.height}, top=${finalRect.top}, right=${window.innerWidth - finalRect.right}, visible=${finalRect.width > 0 && finalRect.height > 0}`);
+                    }
+                    
                     addedCount++;
                     results.push({ number: element.number, selector: element.selector, found: true, container: container.tagName });
                 } else {
                     results.push({ number: element.number, selector: element.selector, found: false });
                 }
             });
-            return { count: addedCount, details: results };
+            return { count: addedCount, details: results, debugInfo: debugInfo };
         }, elements);
+        
+        // Exibir informações de debug para badges 5-7
+        if (badgesAdded.debugInfo && badgesAdded.debugInfo.length > 0) {
+            console.log('📊 Debug badges 5-7:');
+            badgesAdded.debugInfo.forEach(msg => console.log(`   ${msg}`));
+        }
         
         console.log(`   ✅ ${badgesAdded.count} badges adicionados`);
         badgesAdded.details.forEach(detail => {
@@ -748,7 +919,8 @@ async function generateFormImage(config, databaseRecord = null) {
         });
         
         // Aguardar renderização dos badges e garantir que o CSS foi aplicado
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Aumentar delay para garantir que badges em ícones sejam renderizados
+        await new Promise(resolve => setTimeout(resolve, 1500));
         
         // Verificar se os badges estão visíveis e têm o CSS correto
         const badgesInfo = await page.evaluate(() => {
@@ -1427,15 +1599,32 @@ async function generateFormImage(config, databaseRecord = null) {
                 td.removeAttribute('md-cell');
             });
             
-            // Converter md-icon para span.material-icons
-            body.querySelectorAll('md-icon').forEach(icon => {
+            // Converter md-icon para span.material-icons - IMPORTANTE: fazer isso ANTES de procurar os ícones
+            const mdIcons = body.querySelectorAll('md-icon');
+            console.log('Ícones md-icon encontrados para conversão:', mdIcons.length);
+            mdIcons.forEach((icon, index) => {
                 const content = icon.textContent.trim();
                 const span = document.createElement('span');
                 span.className = 'material-icons action-icon';
                 span.textContent = content;
                 span.style.cssText = 'font-family: Material Icons; cursor: pointer; color: #666; display: inline-block; margin: 0 4px; font-size: 24px; line-height: 1;';
-                icon.parentNode.replaceChild(span, icon);
+                
+                // Preservar a posição no DOM
+                if (icon.parentNode) {
+                    icon.parentNode.replaceChild(span, icon);
+                }
+                console.log(`Ícone ${index + 1} convertido: ${content}`);
             });
+            
+            // Verificar se ainda há md-icon após conversão
+            const remainingMdIcons = body.querySelectorAll('md-icon');
+            if (remainingMdIcons.length > 0) {
+                console.log('⚠️ Ainda há', remainingMdIcons.length, 'ícones md-icon após conversão');
+            }
+            
+            // Verificar se os action-icon foram criados
+            const actionIcons = body.querySelectorAll('.action-icon');
+            console.log('Ícones .action-icon encontrados após conversão:', actionIcons.length);
             
             // Procurar tbody
             let tbody = body.querySelector('tbody');

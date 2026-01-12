@@ -194,9 +194,25 @@ export function createFullHTML(formHTML, title = 'Formulário', elements = [], c
         td.action {
             text-align: right;
             white-space: nowrap;
+            overflow: visible !important;
+            position: relative;
         }
         td.action md-icon {
             margin: 0 4px;
+        }
+        .action-icon, .material-icons.action-icon {
+            position: relative !important;
+            display: inline-block !important;
+            overflow: visible !important;
+        }
+        md-table-container, .table-responsive {
+            overflow: visible !important;
+        }
+        table, tbody, thead {
+            overflow: visible !important;
+        }
+        .panel {
+            overflow: visible !important;
         }
         /* Estilos para tabela padrão (após conversão) */
         .table-responsive {
