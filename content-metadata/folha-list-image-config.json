@@ -1,0 +1,125 @@
+{
+  "pageName": "Folha de Pagamento - Listagem",
+  "htmlPath": "/Applications/MAMP/htdocs/milks/web/src/secure/pay/folha/views/folha.list.html",
+  "outputImage": "content/folha-list.png",
+  "renderOptions": {
+    "viewport": {
+      "width": 1600,
+      "height": 1000,
+      "deviceScaleFactor": 2
+    }
+  },
+  "processAngularTemplates": true,
+  "autoDetectElements": false,
+  "elements": [
+    {
+      "selector": "button[ui-sref='app.pay-folha-create({tipo:0})']",
+      "number": 1,
+      "label": "Nova folha",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": ".dropdown-menu li[ui-sref*='tipo:1']",
+      "number": 2,
+      "label": "Simulação",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "button[ng-click='filtro.open()']",
+      "number": 3,
+      "label": "Filtrar",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "thead th:first-of-type",
+      "number": 4,
+      "label": "FOLHA",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "thead th:nth-of-type(2)",
+      "number": 5,
+      "label": "FORNECIMENTO",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "thead th:nth-of-type(3)",
+      "number": 6,
+      "label": "TOTAL BRUTO",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "thead th:nth-of-type(4)",
+      "number": 7,
+      "label": "PREÇO MÉDIO",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "thead th:nth-of-type(5)",
+      "number": 8,
+      "label": "STATUS",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "tbody tr:first-child td:last-child div .action-icon:first-of-type",
+      "number": 9,
+      "label": "Visualizar",
+      "position": {
+        "top": "-5px",
+        "right": "-5px"
+      }
+    },
+    {
+      "selector": "tbody tr:first-child td:last-child div .action-icon:nth-of-type(2)",
+      "number": 10,
+      "label": "Editar",
+      "position": {
+        "top": "-5px",
+        "right": "-5px"
+      }
+    },
+    {
+      "selector": "tbody tr:first-child td:last-child div .action-icon:last-of-type",
+      "number": 11,
+      "label": "Excluir",
+      "position": {
+        "top": "-5px",
+        "right": "-5px"
+      }
+    }
+  ],
+  "database": {
+    "enabled": true,
+    "useMCP": true,
+    "apiEndpoint": "milkspay/folha/find",
+    "dataFile": "content-metadata/folha-list-data.json"
+  },
+  "fillData": {
+    "enabled": true,
+    "mappings": {}
+  }
+}

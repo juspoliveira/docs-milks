@@ -1,0 +1,70 @@
+{
+  "result": [
+    {
+      "id": 589,
+      "referencia": "10",
+      "dt_inicio_fornecimento": "2025-10-01T03:00:00.000Z",
+      "dt_fim_fornecimento": "2025-10-31T03:00:00.000Z",
+      "volume": 516498,
+      "total_fornecimento": "1322011.58",
+      "preco_medio": "2.560",
+      "status": "F",
+      "simulacao": 0,
+      "consolidacao": "OUTUBRO 25",
+      "fornecedores": 27
+    },
+    {
+      "id": 588,
+      "referencia": "OUTUBRO 2025",
+      "dt_inicio_fornecimento": "2025-10-01T03:00:00.000Z",
+      "dt_fim_fornecimento": "2025-10-31T03:00:00.000Z",
+      "volume": 1219710,
+      "total_fornecimento": "2058498.14",
+      "preco_medio": "1.688",
+      "status": "A",
+      "simulacao": 0,
+      "consolidacao": "OUTUBRO 2025",
+      "fornecedores": 205
+    },
+    {
+      "id": 587,
+      "referencia": "10",
+      "dt_inicio_fornecimento": "2025-10-01T03:00:00.000Z",
+      "dt_fim_fornecimento": "2025-10-31T03:00:00.000Z",
+      "volume": 351313,
+      "total_fornecimento": "696150.44",
+      "preco_medio": "1.982",
+      "status": "A",
+      "simulacao": 0,
+      "consolidacao": "OUTUBRO - 2025",
+      "fornecedores": 220
+    },
+    {
+      "id": 586,
+      "referencia": "1º Quinzena de Novembro",
+      "dt_inicio_fornecimento": "2025-11-01T03:00:00.000Z",
+      "dt_fim_fornecimento": "2025-11-15T03:00:00.000Z",
+      "volume": 132220,
+      "total_fornecimento": "271599.71",
+      "preco_medio": "2.054",
+      "status": "A",
+      "simulacao": 0,
+      "consolidacao": "1º Quinzena de Novembro",
+      "fornecedores": 107
+    },
+    {
+      "id": 585,
+      "referencia": "1 º Quinzena de Novembro",
+      "dt_inicio_fornecimento": "2025-11-01T03:00:00.000Z",
+      "dt_fim_fornecimento": "2025-11-15T03:00:00.000Z",
+      "volume": 102795,
+      "total_fornecimento": "219443.41",
+      "preco_medio": "2.135",
+      "status": "A",
+      "simulacao": 0,
+      "consolidacao": "1 º Quinzena de Novembro",
+      "fornecedores": 40
+    }
+  ],
+  "affectedRows": 0
+}

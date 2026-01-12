@@ -275,7 +275,7 @@ export function createFullHTML(formHTML, title = 'Formulário', elements = [], c
                         // Bootstrap if not already bootstrapped
                         const body = document.body;
                         if (!angular.element(body).injector()) {
-                            angular.bootstrap(body, ['pay.ajusteacordo', 'pay.modelopagamento', 'pay.consolidacaoqualidade', 'pay.tabelapreco', 'ngMaterial']);
+                            angular.bootstrap(body, ['pay.ajusteacordo', 'pay.modelopagamento', 'pay.consolidacaoqualidade', 'pay.tabelapreco', 'pay.folha', 'ngMaterial']);
                         }
                     } catch (e) {
                         console.warn('Erro ao inicializar AngularJS:', e.message);

@@ -58,6 +58,80 @@ function loadConfig(configPath) {
 }
 
 /**
+ * Fetch data from MySQL database using MCP
+ * This function can be called with pre-fetched data or will attempt to load from a temp file
+ * @param {Object} config - Configuration object with database settings
+ * @param {Array} preFetchedData - Optional pre-fetched data from MCP (passed by external caller)
+ * @returns {Promise<Array|null>} Array of records or null if failed
+ */
+async function fetchDataFromMCP(config, preFetchedData = null) {
+    if (!config.database?.useMCP) {
+        return null;
+    }
+
+    // Se dados já foram pré-carregados, usar diretamente
+    if (preFetchedData && Array.isArray(preFetchedData)) {
+        console.log(`   ✅ Usando ${preFetchedData.length} registros pré-carregados do MCP`);
+        return formatMCPData(preFetchedData);
+    }
+
+    // Tentar carregar de arquivo temporário (criado por chamada MCP externa)
+    const { join } = await import('path');
+    const tempDataPath = join(projectRoot, 'content-metadata', '.mcp-temp-data.json');
+    
+    if (existsSync(tempDataPath)) {
+        try {
+            console.log('   🔍 Carregando dados do MCP via arquivo temporário...');
+            const tempData = JSON.parse(readFileSync(tempDataPath, 'utf-8'));
+            if (tempData && Array.isArray(tempData.result)) {
+                const formatted = formatMCPData(tempData.result);
+                // NÃO deletar arquivo temporário aqui - será usado durante o processamento
+                // O arquivo será limpo no final do processamento se necessário
+                return formatted;
+            }
+        } catch (error) {
+            console.warn(`   ⚠️  Erro ao carregar dados temporários: ${error.message}`);
+        }
+    }
+
+    console.warn('   ⚠️  MCP não disponível diretamente. Use arquivo JSON como fallback.');
+    return null;
+}
+
+/**
+ * Format MCP query results to expected format
+ * @param {Array} records - Raw records from MCP query
+ * @returns {Array} Formatted records
+ */
+function formatMCPData(records) {
+    if (!Array.isArray(records) || records.length === 0) {
+        return [];
+    }
+
+    console.log(`   📊 Formatando ${records.length} registros do MCP...`);
+    
+    return records.map(record => ({
+        id: record.id,
+        referencia: record.referencia || '',
+        dt_inicio_fornecimento: record.dt_inicio_fornecimento ? 
+            (typeof record.dt_inicio_fornecimento === 'string' && record.dt_inicio_fornecimento.includes('T') ?
+                record.dt_inicio_fornecimento.split('T')[0] :
+                new Date(record.dt_inicio_fornecimento).toISOString().split('T')[0]) : null,
+        dt_fim_fornecimento: record.dt_fim_fornecimento ? 
+            (typeof record.dt_fim_fornecimento === 'string' && record.dt_fim_fornecimento.includes('T') ?
+                record.dt_fim_fornecimento.split('T')[0] :
+                new Date(record.dt_fim_fornecimento).toISOString().split('T')[0]) : null,
+        consolidacao: record.consolidacao || '',
+        fornecedores: parseInt(record.fornecedores) || 0,
+        volume: parseFloat(record.volume) || 0,
+        total_fornecimento: parseFloat(record.total_fornecimento) || 0,
+        preco_medio: parseFloat(record.preco_medio) || 0,
+        status: record.status || 'A',
+        simulacao: record.simulacao !== undefined ? String(record.simulacao) : '0'
+    }));
+}
+
+/**
  * Load database record from JSON file (pre-fetched via MCP)
  * @param {string} dataPath - Path to JSON file with database record
  * @returns {Object|null} Record object or null
@@ -118,18 +192,47 @@ async function generateFormImage(config, databaseRecord = null) {
     
     // Carregar dados adicionais ANTES de processar HTML (para poder adicionar ng-controller)
     let additionalData = {};
-    if (config.database?.enabled && config.database?.dataFile) {
+    if (config.database?.enabled) {
+        let dataLoaded = false;
+        
+        // Tentar buscar via MCP primeiro se habilitado
+        if (config.database?.useMCP) {
+            try {
+                const mcpData = await fetchDataFromMCP(config);
+                if (mcpData && Array.isArray(mcpData) && mcpData.length > 0) {
+                    additionalData.records = mcpData;
+                    dataLoaded = true;
+                    console.log(`   ✅ Carregados ${mcpData.length} registros do banco via MCP`);
+                }
+            } catch (error) {
+                console.warn(`   ⚠️  Erro ao buscar dados via MCP: ${error.message}`);
+            }
+        }
+        
+        // Fallback para arquivo JSON se MCP não retornou dados
+        if (!dataLoaded && config.database?.dataFile) {
         const dataPath = resolve(projectRoot, config.database.dataFile);
         if (existsSync(dataPath)) {
             try {
                 const dataContent = readFileSync(dataPath, 'utf-8');
                 const data = JSON.parse(dataContent);
                 
-                // Verificar se é estrutura de faixas (com imposto e faixas)
-                if (data.imposto && data.faixas) {
+                    // Verificar se é array direto (para folha, tabelapreco, etc)
+                    if (Array.isArray(data)) {
+                        additionalData.records = data;
+                        console.log(`   📊 Carregados ${data.length} registros do arquivo de dados (fallback)`);
+                        dataLoaded = true;
+                    } else if (data.records && Array.isArray(data.records)) {
+                        // Estrutura com objeto contendo records
+                        additionalData.records = data.records;
+                        console.log(`   📊 Carregados ${data.records.length} registros do arquivo de dados (fallback)`);
+                        dataLoaded = true;
+                    } else if (data.imposto && data.faixas) {
+                        // Verificar se é estrutura de faixas (com imposto e faixas)
                     additionalData.imposto = data.imposto;
                     additionalData.faixas = Array.isArray(data.faixas) ? data.faixas : [data.faixas];
-                    console.log(`   📊 Carregados dados do imposto "${data.imposto.descricao}" com ${additionalData.faixas.length} faixas`);
+                        console.log(`   📊 Carregados dados do imposto "${data.imposto.descricao}" com ${additionalData.faixas.length} faixas (fallback)`);
+                        dataLoaded = true;
                     
                     // Adicionar ng-controller para faixas se não tiver (para tabela)
                     if (!formHTML.includes('ng-controller="imposto.FaixaCtrl"') && formHTML.includes('ng-repeat="faixa in faixas"')) {
@@ -152,13 +255,14 @@ async function generateFormImage(config, databaseRecord = null) {
                         }
                         console.log('   ✅ Adicionado ng-controller="imposto.FaixaModalCtrl"');
                     }
-                } else if (data.record && data.valores) {
-                    // Estrutura de valores (com record e valores)
-                    additionalData.record = data.record;
-                    additionalData.valores = Array.isArray(data.valores) ? data.valores : [data.valores];
-                    console.log(`   📊 Carregados dados da tabela "${data.record.nome}" com ${additionalData.valores.length} valores`);
-                    
-                    // Adicionar ng-controller para valores se não tiver
+                    } else if (data.record && data.valores) {
+                        // Estrutura de valores (com record e valores)
+                        additionalData.record = data.record;
+                        additionalData.valores = Array.isArray(data.valores) ? data.valores : [data.valores];
+                        console.log(`   📊 Carregados dados da tabela "${data.record.nome}" com ${additionalData.valores.length} valores (fallback)`);
+                        dataLoaded = true;
+                        
+                        // Adicionar ng-controller para valores se não tiver
                     if (!formHTML.includes('ng-controller="tabelapreco.ValorCtrl"') && formHTML.includes('ng-repeat="valor in valores"')) {
                         // Adicionar ng-controller ao primeiro div com class wrapper-sm ou ng-controller
                         formHTML = formHTML.replace(/<div([^>]*ng-controller="tabelapreco\.ValorCtrl"[^>]*class="[^"]*wrapper-sm[^"]*")/i, '<div$1');
@@ -166,14 +270,15 @@ async function generateFormImage(config, databaseRecord = null) {
                             formHTML = formHTML.replace(/<div([^>]*class="[^"]*wrapper-sm[^"]*")/i, '<div$1 ng-controller="tabelapreco.ValorCtrl"');
                         }
                         console.log('   ✅ Adicionado ng-controller="tabelapreco.ValorCtrl"');
-                    }
-                } else if (data.record && data.registro) {
-                    // Estrutura de modal de valores (com record e registro)
-                    additionalData.record = data.record;
-                    additionalData.registro = data.registro;
-                    console.log(`   📊 Carregados dados do modal para tabela "${data.record.nome}"`);
-                    
-                    // Adicionar ng-controller para modal de valores se não tiver
+                        }
+                    } else if (data.record && data.registro) {
+                        // Estrutura de modal de valores (com record e registro)
+                        additionalData.record = data.record;
+                        additionalData.registro = data.registro;
+                        console.log(`   📊 Carregados dados do modal para tabela "${data.record.nome}" (fallback)`);
+                        dataLoaded = true;
+                        
+                        // Adicionar ng-controller para modal de valores se não tiver
                     if (!formHTML.includes('ng-controller="tabelapreco.ValorModalCtrl"') && formHTML.includes('ng-model="registro.')) {
                         // Adicionar ng-controller ao form
                         if (formHTML.includes('<form')) {
@@ -182,7 +287,7 @@ async function generateFormImage(config, databaseRecord = null) {
                             formHTML = formHTML.replace(/<div([^>]*class="[^"]*modal-body[^"]*")/i, '<div$1 ng-controller="tabelapreco.ValorModalCtrl"');
                         }
                         console.log('   ✅ Adicionado ng-controller="tabelapreco.ValorModalCtrl"');
-                    }
+                        }
                 } else {
                     // Estrutura de lista simples (records)
                     // Verificar se data tem propriedade records
@@ -193,7 +298,8 @@ async function generateFormImage(config, databaseRecord = null) {
                     } else {
                         additionalData.records = [data];
                     }
-                    console.log(`   📊 Carregados ${additionalData.records.length} registros do arquivo de dados`);
+                        console.log(`   📊 Carregados ${additionalData.records.length} registros do arquivo de dados (fallback)`);
+                        dataLoaded = true;
                     
                     // Adicionar ng-controller diretamente no HTML se houver dados
                     if (additionalData.records.length > 0 && formHTML.includes('ng-repeat="record in records')) {
@@ -201,6 +307,8 @@ async function generateFormImage(config, databaseRecord = null) {
                         let controllerName = 'ajusteacordo.AcordoListCtrl'; // padrão
                         if (config.htmlPath && config.htmlPath.includes('tabelapreco')) {
                             controllerName = 'tabelapreco.ListCtrl';
+                        } else if (config.htmlPath && config.htmlPath.includes('folha')) {
+                            controllerName = 'folha.ListCtrl';
                         }
                         
                         // Adicionar ng-controller ao elemento sng-page ou sng-content
@@ -215,6 +323,7 @@ async function generateFormImage(config, databaseRecord = null) {
                 }
             } catch (error) {
                 console.warn(`Erro ao carregar dados: ${error.message}`);
+                }
             }
         }
     }
@@ -367,8 +476,36 @@ async function generateFormImage(config, databaseRecord = null) {
                             rowHTML = rowHTML.replace(/\{\{record\.nome\}\}/g, record.nome || '');
                             rowHTML = rowHTML.replace(/\{\{record\.id\}\}/g, record.id || '');
                             
+                            // Substituir campos específicos da folha
+                            rowHTML = rowHTML.replace(/\{\{record\.referencia\}\}/g, record.referencia || '');
+                            rowHTML = rowHTML.replace(/\{\{record\.consolidacao\}\}/g, record.consolidacao || '');
+                            rowHTML = rowHTML.replace(/\{\{record\.fornecedores\}\}/g, record.fornecedores || 0);
+                            rowHTML = rowHTML.replace(/\{\{record\.volume\s*\|\s*number:0\}\}/g, (record.volume || 0).toLocaleString('pt-BR'));
+                            rowHTML = rowHTML.replace(/\{\{record\.volume\s*\|\|\s*0\s*\|\s*number:0\}\}/g, (record.volume || 0).toLocaleString('pt-BR'));
+                            rowHTML = rowHTML.replace(/\{\{record\.total_fornecimento\s*\|\s*currency\}\}/g, new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(record.total_fornecimento || 0));
+                            rowHTML = rowHTML.replace(/\{\{record\.total_fornecimento\s*\|\|\s*0\s*\|\s*currency\}\}/g, new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(record.total_fornecimento || 0));
+                            rowHTML = rowHTML.replace(/\{\{record\.preco_medio\s*\|\s*number:3\}\}/g, (record.preco_medio || 0).toFixed(3));
+                            rowHTML = rowHTML.replace(/\{\{record\.preco_medio\s*\|\|\s*0\s*\|\s*number:3\}\}/g, (record.preco_medio || 0).toFixed(3));
+                            
+                            // Substituir datas com formato (corrigir timezone)
+                            if (record.dt_inicio_fornecimento) {
+                                // Usar apenas a data sem considerar timezone
+                                const dateStr = record.dt_inicio_fornecimento.split('T')[0]; // YYYY-MM-DD
+                                const [year, month, day] = dateStr.split('-');
+                                const dtInicioStr = `${day}/${month}/${year}`;
+                                rowHTML = rowHTML.replace(/\{\{record\.dt_inicio_fornecimento\s*\|\s*amDateFormat:'DD\/MM\/YYYY'\}\}/g, dtInicioStr);
+                            }
+                            if (record.dt_fim_fornecimento) {
+                                // Usar apenas a data sem considerar timezone
+                                const dateStr = record.dt_fim_fornecimento.split('T')[0]; // YYYY-MM-DD
+                                const [year, month, day] = dateStr.split('-');
+                                const dtFimStr = `${day}/${month}/${year}`;
+                                rowHTML = rowHTML.replace(/\{\{record\.dt_fim_fornecimento\s*\|\s*amDateFormat:'DD\/MM\/YYYY'\}\}/g, dtFimStr);
+                            }
+                            
                             // Substituir interpolações dentro de atributos (ex: ui-sref)
                             rowHTML = rowHTML.replace(/\{id:\s*record\.id\}/g, `{id: ${record.id}}`);
+                            rowHTML = rowHTML.replace(/\{id:\s*record\.id,\s*tipo:record\.simulacao\}/g, `{id: ${record.id}, tipo: ${record.simulacao || 0}}`);
                             
                             // Converter md-icon para span.material-icons.action-icon no pré-processamento
                             // Usar regex mais robusto que captura múltiplas linhas
@@ -395,7 +532,15 @@ async function generateFormImage(config, databaseRecord = null) {
                         formHTML = formHTML.replace(/<tbody[^>]*ng-if\s*=\s*["']records\.length\s*==\s*0["'][^>]*>[\s\S]*?<\/tbody>/g, '');
                         
                         console.log(`✅ Criadas ${additionalData.records.length} linhas no HTML`);
-                        console.log(`Primeira linha (primeiros 400 chars): ${rowsHTML.substring(0, 400)}`);
+                        console.log(`📊 Total de caracteres nas linhas: ${rowsHTML.length}`);
+                        console.log(`📊 Primeira linha (primeiros 500 chars): ${rowsHTML.substring(0, 500)}`);
+                        // Verificar se dados reais foram substituídos
+                        const hasRealData = rowsHTML.includes('OUTUBRO') || rowsHTML.includes('589') || rowsHTML.includes('516498');
+                        console.log(`📊 Dados reais encontrados nas linhas: ${hasRealData ? 'SIM ✅' : 'NÃO ❌'}`);
+                        if (!hasRealData && additionalData.records.length > 0) {
+                            console.log(`⚠️ ATENÇÃO: Linhas criadas mas dados não foram substituídos!`);
+                            console.log(`📊 Primeiro registro:`, JSON.stringify(additionalData.records[0], null, 2));
+                        }
                     } else {
                         console.log('⚠️ Fechamento </tr> não encontrado no template');
                     }
@@ -706,31 +851,46 @@ async function generateFormImage(config, databaseRecord = null) {
                 if (element.selector.includes('action-icon')) {
                     debugMsg = `Badge ${element.number}: selector="${element.selector}"`;
                     
-                    // Encontrar a primeira célula action na primeira linha da tabela
-                    const firstActionCell = document.querySelector('tbody tr:first-child td.action, tbody tr td.action');
-                    if (firstActionCell) {
-                        const allIcons = Array.from(firstActionCell.querySelectorAll('.action-icon, span.material-icons'));
-                        debugMsg += ` | Encontrados ${allIcons.length} ícones`;
+                    // Encontrar a primeira linha da tabela
+                    const firstRow = document.querySelector('tbody tr:first-child');
+                    if (firstRow) {
+                        // Tentar encontrar na última célula (para folha) ou em td.action (para tabelapreco)
+                        const lastCell = firstRow.querySelector('td:last-child');
+                        const actionCell = firstRow.querySelector('td.action');
+                        const targetCell = lastCell || actionCell;
                         
-                        if (element.selector.includes('first-of-type') || element.number === 5) {
-                            el = allIcons[0] || null;
-                            debugMsg += ` | Primeiro: ${el ? `"${el.textContent.trim()}"` : 'não encontrado'}`;
-                        } else if (element.selector.includes('nth-of-type(2)') || element.number === 6) {
-                            el = allIcons[1] || null;
-                            debugMsg += ` | Segundo: ${el ? `"${el.textContent.trim()}"` : 'não encontrado'}`;
-                        } else if (element.selector.includes('last-of-type') || element.number === 7) {
-                            el = allIcons[allIcons.length - 1] || null;
-                            debugMsg += ` | Último: ${el ? `"${el.textContent.trim()}"` : 'não encontrado'}`;
+                        if (targetCell) {
+                            const iconDiv = targetCell.querySelector('div');
+                            if (iconDiv) {
+                                const allIcons = Array.from(iconDiv.querySelectorAll('.action-icon, span.material-icons, md-icon'));
+                                debugMsg += ` | Encontrados ${allIcons.length} ícones`;
+                                
+                                // Determinar qual ícone usar baseado no número do badge
+                                if (element.selector.includes('first-of-type') || element.number === 5 || element.number === 9) {
+                                    el = allIcons[0] || null;
+                                    debugMsg += ` | Primeiro: ${el ? `"${el.textContent.trim()}"` : 'não encontrado'}`;
+                                } else if (element.selector.includes('nth-of-type(2)') || element.number === 6 || element.number === 10) {
+                                    el = allIcons[1] || null;
+                                    debugMsg += ` | Segundo: ${el ? `"${el.textContent.trim()}"` : 'não encontrado'}`;
+                                } else if (element.selector.includes('last-of-type') || element.number === 7 || element.number === 11) {
+                                    el = allIcons[allIcons.length - 1] || null;
+                                    debugMsg += ` | Último: ${el ? `"${el.textContent.trim()}"` : 'não encontrado'}`;
+                                }
+                            } else {
+                                debugMsg += ` | ⚠️ Div de ícones não encontrada`;
+                            }
+                        } else {
+                            debugMsg += ` | ⚠️ Célula não encontrada`;
                         }
                     } else {
-                        debugMsg += ` | ⚠️ Célula action não encontrada`;
+                        debugMsg += ` | ⚠️ Primeira linha não encontrada`;
                     }
                 } else {
                     // Para outros elementos, usar o seletor original
                     el = document.querySelector(element.selector);
                 }
                 
-                if (element.number >= 5 && element.number <= 7) {
+                if ((element.number >= 5 && element.number <= 7) || (element.number >= 9 && element.number <= 11)) {
                     debugInfo.push(debugMsg);
                 }
                 
@@ -767,7 +927,7 @@ async function generateFormImage(config, databaseRecord = null) {
                             actionCell.style.overflow = 'visible';
                         }
                     } else if (isInput && !isCheckbox) {
-                        // Para inputs, usar o form-group como container
+                    // Para inputs, usar o form-group como container
                         const formGroup = el.closest('.form-group');
                         if (formGroup) {
                             container = formGroup;

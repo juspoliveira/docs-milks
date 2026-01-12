@@ -1,0 +1,67 @@
+[
+  {
+    "id": 1,
+    "referencia": "2024/01",
+    "dt_inicio_fornecimento": "2024-01-01",
+    "dt_fim_fornecimento": "2024-01-31",
+    "consolidacao": "Consolidação Janeiro 2024",
+    "fornecedores": 25,
+    "volume": 125000,
+    "total_fornecimento": 312500.00,
+    "preco_medio": 2.500,
+    "status": "A",
+    "simulacao": "0"
+  },
+  {
+    "id": 2,
+    "referencia": "2024/02",
+    "dt_inicio_fornecimento": "2024-02-01",
+    "dt_fim_fornecimento": "2024-02-29",
+    "consolidacao": "Consolidação Fevereiro 2024",
+    "fornecedores": 28,
+    "volume": 135000,
+    "total_fornecimento": 337500.00,
+    "preco_medio": 2.501,
+    "status": "F",
+    "simulacao": "0"
+  },
+  {
+    "id": 3,
+    "referencia": "2024/03",
+    "dt_inicio_fornecimento": "2024-03-01",
+    "dt_fim_fornecimento": "2024-03-31",
+    "consolidacao": "Consolidação Março 2024",
+    "fornecedores": 30,
+    "volume": 142000,
+    "total_fornecimento": 355000.00,
+    "preco_medio": 2.502,
+    "status": "A",
+    "simulacao": "0"
+  },
+  {
+    "id": 4,
+    "referencia": "SIM-2024/04",
+    "dt_inicio_fornecimento": "2024-04-01",
+    "dt_fim_fornecimento": "2024-04-30",
+    "consolidacao": "Consolidação Abril 2024",
+    "fornecedores": 32,
+    "volume": 150000,
+    "total_fornecimento": 375000.00,
+    "preco_medio": 2.500,
+    "status": "A",
+    "simulacao": "1"
+  },
+  {
+    "id": 5,
+    "referencia": "2024/05",
+    "dt_inicio_fornecimento": "2024-05-01",
+    "dt_fim_fornecimento": "2024-05-31",
+    "consolidacao": "Consolidação Maio 2024",
+    "fornecedores": 0,
+    "volume": 0,
+    "total_fornecimento": 0.00,
+    "preco_medio": 0.000,
+    "status": "B",
+    "simulacao": "0"
+  }
+]

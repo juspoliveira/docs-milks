@@ -118,6 +118,68 @@ export async function processAngularTemplates(page, additionalData = {}) {
                 console.log('Módulo pay.tabelapreco criado');
             }
             
+            let appFolha;
+            try {
+                appFolha = angular.module('pay.folha');
+                console.log('Módulo pay.folha já existe');
+            } catch (e) {
+                appFolha = angular.module('pay.folha', []);
+                console.log('Módulo pay.folha criado');
+            }
+            
+            // Define the folha ListCtrl controller
+            appFolha.controller('folha.ListCtrl', [
+                '$scope',
+                function($scope) {
+                    console.log('folha.ListCtrl sendo inicializado...');
+                    // Use real data if provided, otherwise use mock data
+                    const recordsData = additionalData && additionalData.records ? additionalData.records : [
+                        { 
+                            id: 1, 
+                            referencia: '2024/01',
+                            dt_inicio_fornecimento: '2024-01-01',
+                            dt_fim_fornecimento: '2024-01-31',
+                            consolidacao: 'Consolidação Exemplo',
+                            fornecedores: 10,
+                            volume: 50000,
+                            total_fornecimento: 125000.00,
+                            preco_medio: 2.500,
+                            status: 'A',
+                            simulacao: '0'
+                        }
+                    ];
+                    
+                    // Set data immediately
+                    $scope.records = JSON.parse(JSON.stringify(recordsData));
+                    $scope.service = { sort: null };
+                    $scope.filtro = { open: function() {} };
+                    $scope.paging = {};
+                    $scope.api = {
+                        find: function() { return Promise.resolve($scope.records); },
+                        remove: function(id, callback) { callback(true); }
+                    };
+                    $scope.remove = function(id) {
+                        $scope.records = $scope.records.filter(r => r.id !== id);
+                    };
+                    $scope.reloadData = function() {
+                        // Mock reload - just ensure records are set
+                        if (!$scope.records || $scope.records.length === 0) {
+                            $scope.records = JSON.parse(JSON.stringify(recordsData));
+                        }
+                    };
+                    
+                    console.log('folha.ListCtrl inicializado com', $scope.records.length, 'registros');
+                    if ($scope.records.length > 0) {
+                        console.log('Primeiro registro:', $scope.records[0]);
+                    }
+                    
+                    // Force immediate digest
+                    if (!$scope.$$phase && !$scope.$root.$$phase) {
+                        $scope.$apply();
+                    }
+                }
+            ]);
+            
             // Define the tabelapreco ListCtrl controller
             appTabelaPreco.controller('tabelapreco.ListCtrl', [
                 '$scope',
@@ -966,6 +1028,39 @@ export async function processAngularTemplates(page, additionalData = {}) {
                                 }
                             } catch (e) {
                                 console.warn('Erro ao aplicar dados ao tabelapreco.ListCtrl:', e.message);
+                            }
+                        });
+                        
+                        // Apply data specifically to folha.ListCtrl
+                        const folhaListElements = document.querySelectorAll('[ng-controller="folha.ListCtrl"]');
+                        folhaListElements.forEach(element => {
+                            try {
+                                const scope = angular.element(element).scope();
+                                if (scope) {
+                                    scope.records = JSON.parse(JSON.stringify(additionalData.records));
+                                    scope.service = scope.service || { sort: null };
+                                    scope.filtro = scope.filtro || { open: function() {} };
+                                    scope.paging = scope.paging || {};
+                                    
+                                    // Recompile the element to ensure ng-repeat is processed
+                                    if ($compile) {
+                                        $compile(element)(scope);
+                                    }
+                                    
+                                    if (!scope.$$phase && !scope.$root.$$phase) {
+                                        scope.$apply();
+                                    }
+                                    console.log('Dados aplicados ao folha.ListCtrl:', scope.records.length, 'registros');
+                                    
+                                    // Force another digest after a short delay to ensure rendering
+                                    setTimeout(() => {
+                                        if (!scope.$$phase && !scope.$root.$$phase) {
+                                            scope.$apply();
+                                        }
+                                    }, 100);
+                                }
+                            } catch (e) {
+                                console.warn('Erro ao aplicar dados ao folha.ListCtrl:', e.message);
                             }
                         });
                         
