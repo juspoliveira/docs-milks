@@ -154,18 +154,31 @@ async function generateFormImage(config, databaseRecord = null) {
                     }
                 } else {
                     // Estrutura de lista simples (records)
-                    additionalData.records = Array.isArray(data) ? data : [data];
+                    // Verificar se data tem propriedade records
+                    if (data.records && Array.isArray(data.records)) {
+                        additionalData.records = data.records;
+                    } else if (Array.isArray(data)) {
+                        additionalData.records = data;
+                    } else {
+                        additionalData.records = [data];
+                    }
                     console.log(`   📊 Carregados ${additionalData.records.length} registros do arquivo de dados`);
                     
                     // Adicionar ng-controller diretamente no HTML se houver dados
                     if (additionalData.records.length > 0 && formHTML.includes('ng-repeat="record in records')) {
+                        // Detectar qual controller usar baseado no caminho do HTML
+                        let controllerName = 'ajusteacordo.AcordoListCtrl'; // padrão
+                        if (config.htmlPath && config.htmlPath.includes('tabelapreco')) {
+                            controllerName = 'tabelapreco.ListCtrl';
+                        }
+                        
                         // Adicionar ng-controller ao elemento sng-page ou sng-content
                         if (formHTML.includes('<sng-page>') && !formHTML.includes('ng-controller')) {
-                            formHTML = formHTML.replace('<sng-page>', '<sng-page ng-controller="ajusteacordo.AcordoListCtrl">');
-                            console.log('   ✅ Adicionado ng-controller="ajusteacordo.AcordoListCtrl" ao sng-page');
+                            formHTML = formHTML.replace('<sng-page>', `<sng-page ng-controller="${controllerName}">`);
+                            console.log(`   ✅ Adicionado ng-controller="${controllerName}" ao sng-page`);
                         } else if (formHTML.includes('<sng-content>') && !formHTML.includes('ng-controller')) {
-                            formHTML = formHTML.replace('<sng-content>', '<sng-content ng-controller="ajusteacordo.AcordoListCtrl">');
-                            console.log('   ✅ Adicionado ng-controller="ajusteacordo.AcordoListCtrl" ao sng-content');
+                            formHTML = formHTML.replace('<sng-content>', `<sng-content ng-controller="${controllerName}">`);
+                            console.log(`   ✅ Adicionado ng-controller="${controllerName}" ao sng-content`);
                         }
                     }
                 }
@@ -722,6 +735,141 @@ async function generateFormImage(config, databaseRecord = null) {
                             .replace(/\{\{record\.codigo\}\}/g, recordCodigo)
                             .replace(/\{\{record\.descricao\}\}/g, recordDesc);
                     }
+                        
+                        // Replace records in list tables (for tabelapreco and other list views)
+                        if (additionalData.records && additionalData.records.length > 0) {
+                            console.log('Processando lista de records:', additionalData.records.length, 'registros');
+                            
+                            // Try to find tbody with md-body or regular tbody
+                            let tbody = body.querySelector('tbody[md-body]');
+                            if (!tbody) {
+                                tbody = body.querySelector('tbody');
+                            }
+                            
+                            if (tbody) {
+                                console.log('Tbody encontrado');
+                                
+                                // Find the ng-repeat element (template row)
+                                let repeatElement = tbody.querySelector('tr[md-row][ng-repeat*="record in records"]');
+                                if (!repeatElement) {
+                                    repeatElement = tbody.querySelector('tr[ng-repeat*="record in records"]');
+                                }
+                                
+                                if (repeatElement) {
+                                    console.log('Template row encontrado');
+                                    
+                                    // Get the template HTML
+                                    const templateHTML = repeatElement.outerHTML;
+                                    console.log('Template HTML:', templateHTML.substring(0, 200));
+                                    
+                                    // Clear existing rows except the "no data" row
+                                    const existingRows = tbody.querySelectorAll('tr');
+                                    existingRows.forEach(row => {
+                                        const ngIf = row.getAttribute('ng-if');
+                                        if (!ngIf || !ngIf.includes('records.length')) {
+                                            row.remove();
+                                        }
+                                    });
+                                    
+                                    // Create new rows for each record
+                                    additionalData.records.forEach((record, index) => {
+                                        const tr = document.createElement('tr');
+                                        
+                                        // Copy attributes from template
+                                        if (repeatElement.hasAttribute('md-row')) {
+                                            tr.setAttribute('md-row', '');
+                                        }
+                                        
+                                        // Replace interpolations in template
+                                        let rowHTML = templateHTML;
+                                        rowHTML = rowHTML.replace(/\{\{record\.codigo\}\}/g, record.codigo || '');
+                                        rowHTML = rowHTML.replace(/\{\{record\.nome\s*\|\s*uppercase\}\}/g, (record.nome || '').toUpperCase());
+                                        rowHTML = rowHTML.replace(/\{\{record\.nome\}\}/g, record.nome || '');
+                                        rowHTML = rowHTML.replace(/ng-repeat="[^"]*"/g, ''); // Remove ng-repeat attribute
+                                        
+                                        // Parse the HTML
+                                        const tempDiv = document.createElement('div');
+                                        tempDiv.innerHTML = rowHTML;
+                                        const templateRow = tempDiv.querySelector('tr');
+                                        if (templateRow) {
+                                            // Copy all cells
+                                            Array.from(templateRow.querySelectorAll('td')).forEach((td, tdIndex) => {
+                                                const newTd = document.createElement('td');
+                                                if (td.hasAttribute('md-cell')) {
+                                                    newTd.setAttribute('md-cell', '');
+                                                }
+                                                newTd.innerHTML = td.innerHTML;
+                                                tr.appendChild(newTd);
+                                            });
+                                        } else {
+                                            // Fallback: create cells manually
+                                            const td1 = document.createElement('td');
+                                            td1.setAttribute('md-cell', '');
+                                            td1.textContent = record.codigo || '';
+                                            tr.appendChild(td1);
+                                            
+                                            const td2 = document.createElement('td');
+                                            td2.setAttribute('md-cell', '');
+                                            td2.textContent = (record.nome || '').toUpperCase();
+                                            tr.appendChild(td2);
+                                            
+                                            const td3 = document.createElement('td');
+                                            td3.setAttribute('md-cell', '');
+                                            td3.className = 'action';
+                                            td3.innerHTML = '<md-icon ui-sref="app.pay-tabelapreco-show({id: ' + record.id + '})" acl="f-tabela_preco-show">visibility</md-icon><md-icon ui-sref="app.pay-tabelapreco-edit({id: ' + record.id + '})" acl="f-tabela_preco-show">edit</md-icon><md-icon ng-click="remove(' + record.id + ')" acl="f-tabela_preco-remove">delete</md-icon>';
+                                            tr.appendChild(td3);
+                                        }
+                                        
+                                        // Insert before the "no data" row if it exists
+                                        const noDataRow = tbody.querySelector('tr[ng-if*="records.length"]');
+                                        if (noDataRow) {
+                                            tbody.insertBefore(tr, noDataRow);
+                                        } else {
+                                            tbody.appendChild(tr);
+                                        }
+                                    });
+                                    
+                                    console.log('Criadas', additionalData.records.length, 'linhas na tabela');
+                                } else {
+                                    console.log('Template row não encontrado, criando linhas manualmente');
+                                    // Fallback: create rows manually
+                                    const existingRows = tbody.querySelectorAll('tr');
+                                    existingRows.forEach(row => {
+                                        const ngIf = row.getAttribute('ng-if');
+                                        if (!ngIf || !ngIf.includes('records.length')) {
+                                            row.remove();
+                                        }
+                                    });
+                                    
+                                    additionalData.records.forEach(record => {
+                                        const tr = document.createElement('tr');
+                                        tr.setAttribute('md-row', '');
+                                        
+                                        const td1 = document.createElement('td');
+                                        td1.setAttribute('md-cell', '');
+                                        td1.textContent = record.codigo || '';
+                                        tr.appendChild(td1);
+                                        
+                                        const td2 = document.createElement('td');
+                                        td2.setAttribute('md-cell', '');
+                                        td2.textContent = (record.nome || '').toUpperCase();
+                                        tr.appendChild(td2);
+                                        
+                                        const td3 = document.createElement('td');
+                                        td3.setAttribute('md-cell', '');
+                                        td3.className = 'action';
+                                        td3.innerHTML = '<md-icon ui-sref="app.pay-tabelapreco-show({id: ' + record.id + '})" acl="f-tabela_preco-show">visibility</md-icon><md-icon ui-sref="app.pay-tabelapreco-edit({id: ' + record.id + '})" acl="f-tabela_preco-show">edit</md-icon><md-icon ng-click="remove(' + record.id + ')" acl="f-tabela_preco-remove">delete</md-icon>';
+                                        tr.appendChild(td3);
+                                        
+                                        tbody.appendChild(tr);
+                                    });
+                                    
+                                    console.log('Criadas', additionalData.records.length, 'linhas manualmente');
+                                }
+                            } else {
+                                console.log('Tbody não encontrado');
+                            }
+                        }
                         
                         // Replace faixa interpolations in table
                         if (additionalData.faixas && additionalData.faixas.length > 0) {

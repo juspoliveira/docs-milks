@@ -109,6 +109,15 @@ export async function processAngularTemplates(page, additionalData = {}) {
                 console.log('Módulo pay.imposto criado');
             }
             
+            let appTabelaPreco;
+            try {
+                appTabelaPreco = angular.module('pay.tabelapreco');
+                console.log('Módulo pay.tabelapreco já existe');
+            } catch (e) {
+                appTabelaPreco = angular.module('pay.tabelapreco', []);
+                console.log('Módulo pay.tabelapreco criado');
+            }
+            
             // Define the payment model controller
             appModelo.controller('modelopagamento.pagamentoFormulaCtrl', [
                 '$scope',
@@ -662,20 +671,20 @@ export async function processAngularTemplates(page, additionalData = {}) {
             
             if (!injector) {
                 try {
-                    // Bootstrap with all modules including pay.imposto
-                    angular.bootstrap(body, ['pay.modelopagamento', 'pay.consolidacaoqualidade', 'pay.ajusteacordo', 'pay.imposto']);
+                    // Bootstrap with all modules including pay.imposto and pay.tabelapreco
+                    angular.bootstrap(body, ['pay.modelopagamento', 'pay.consolidacaoqualidade', 'pay.ajusteacordo', 'pay.imposto', 'pay.tabelapreco']);
                     injector = angular.element(body).injector();
-                    console.log('AngularJS bootstrapped com módulos:', 'pay.modelopagamento', 'pay.consolidacaoqualidade', 'pay.ajusteacordo', 'pay.imposto');
+                    console.log('AngularJS bootstrapped com módulos:', 'pay.modelopagamento', 'pay.consolidacaoqualidade', 'pay.ajusteacordo', 'pay.imposto', 'pay.tabelapreco');
                 } catch (e) {
                     console.warn('Erro ao fazer bootstrap do AngularJS:', e.message);
                     // Try without ajusteacordo module
                     try {
-                        angular.bootstrap(body, ['pay.modelopagamento', 'pay.consolidacaoqualidade', 'pay.imposto']);
+                        angular.bootstrap(body, ['pay.modelopagamento', 'pay.consolidacaoqualidade', 'pay.imposto', 'pay.tabelapreco']);
                         injector = angular.element(body).injector();
                         console.log('AngularJS bootstrapped sem pay.ajusteacordo');
                     } catch (e2) {
                         console.warn('Erro ao fazer bootstrap alternativo:', e2.message);
-                        // Try with just pay.imposto
+                        // Try with just pay.imposto and pay.tabelapreco
                         try {
                             angular.bootstrap(body, ['pay.imposto']);
                             injector = angular.element(body).injector();
@@ -744,9 +753,36 @@ export async function processAngularTemplates(page, additionalData = {}) {
                         });
                     }
                     
+                    // Apply records data to list controllers
                     if ($rootScope && additionalData.records) {
                         // Apply data to root scope first (controllers might inherit from it)
                         $rootScope.$apply();
+                        
+                        // Apply data directly to list controllers
+                        const listControllers = document.querySelectorAll('[ng-controller*="ListCtrl"]');
+                        listControllers.forEach(element => {
+                            try {
+                                const scope = angular.element(element).scope();
+                                if (scope) {
+                                    scope.records = JSON.parse(JSON.stringify(additionalData.records));
+                                    if (scope.service === undefined) {
+                                        scope.service = { sort: null };
+                                    }
+                                    if (scope.filtro === undefined) {
+                                        scope.filtro = { open: function() {} };
+                                    }
+                                    if (scope.paging === undefined) {
+                                        scope.paging = {};
+                                    }
+                                    if (!scope.$$phase && !scope.$root.$$phase) {
+                                        scope.$apply();
+                                    }
+                                    console.log('Dados de records aplicados ao controller:', scope.records.length, 'registros');
+                                }
+                            } catch (e) {
+                                console.warn('Erro ao aplicar records ao controller:', e.message);
+                            }
+                        });
                         
                         // Wait a bit for controllers to initialize
                         setTimeout(() => {
@@ -776,10 +812,17 @@ export async function processAngularTemplates(page, additionalData = {}) {
                                                 parentScope = parentScope.$parent;
                                             }
                                             
-                                            if (currentScope && currentScope.records === undefined) {
-                                                currentScope.records = additionalData.records;
-                                                currentScope.filter = { contrato: '' };
-                                                currentScope.podeEditar = true;
+                                            if (currentScope && (!currentScope.records || currentScope.records.length === 0)) {
+                                                currentScope.records = JSON.parse(JSON.stringify(additionalData.records));
+                                                if (currentScope.service === undefined) {
+                                                    currentScope.service = { sort: null };
+                                                }
+                                                if (currentScope.filtro === undefined) {
+                                                    currentScope.filtro = { open: function() {} };
+                                                }
+                                                if (currentScope.paging === undefined) {
+                                                    currentScope.paging = {};
+                                                }
                                                 currentScope.$apply();
                                             }
                                         }

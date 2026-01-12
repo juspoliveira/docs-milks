@@ -1,0 +1,35 @@
+{
+  "pageName": "Tabela de Preços",
+  "htmlPath": "/Applications/MAMP/htdocs/milks/web/src/secure/pay/tabelapreco/views/tabelapreco.tab.html",
+  "outputImage": "content/tabela-de-precos-form.png",
+  "renderOptions": {
+    "viewport": {
+      "width": 1200,
+      "height": 600,
+      "deviceScaleFactor": 2
+    }
+  },
+  "processAngularTemplates": true,
+  "autoDetectElements": false,
+  "elements": [
+    {
+      "selector": "#codigo",
+      "number": 1
+    },
+    {
+      "selector": "#nome",
+      "number": 2
+    }
+  ],
+  "database": {
+    "enabled": true,
+    "dataFile": "content-metadata/tabela-de-precos-data.json"
+  },
+  "fillData": {
+    "enabled": true,
+    "mappings": {
+      "codigo": "codigo",
+      "nome": "nome"
+    }
+  }
+}

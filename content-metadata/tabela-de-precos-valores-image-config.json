@@ -1,0 +1,36 @@
+{
+  "pageName": "Tabela de Preços - Valores",
+  "htmlPath": "/Applications/MAMP/htdocs/milks/web/src/secure/pay/tabelapreco/views/tabelapreco.valor.tab.html",
+  "outputImage": "content/tabela-de-precos-valores.png",
+  "renderOptions": {
+    "viewport": {
+      "width": 1400,
+      "height": 800,
+      "deviceScaleFactor": 2
+    }
+  },
+  "processAngularTemplates": true,
+  "autoDetectElements": false,
+  "elements": [
+    {
+      "selector": "button[ng-click='abreModalValor()']",
+      "number": 1
+    },
+    {
+      "selector": "i.fa-edit",
+      "number": 2
+    },
+    {
+      "selector": "i.fa-trash",
+      "number": 3
+    }
+  ],
+  "database": {
+    "enabled": true,
+    "dataFile": "content-metadata/tabela-de-precos-valores-data.json"
+  },
+  "fillData": {
+    "enabled": true,
+    "mappings": {}
+  }
+}

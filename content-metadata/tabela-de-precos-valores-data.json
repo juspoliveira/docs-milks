@@ -1,0 +1,23 @@
+{
+  "record": {
+    "id": 1,
+    "codigo": "CEPEA",
+    "nome": "CEPEA - Leite Cru Refrigerado"
+  },
+  "valores": [
+    {
+      "id": 1,
+      "codigo": "2024-01",
+      "ano": 2024,
+      "mes": 1,
+      "valor": "2.50"
+    },
+    {
+      "id": 2,
+      "codigo": "2024-02",
+      "ano": 2024,
+      "mes": 2,
+      "valor": "2.55"
+    }
+  ]
+}

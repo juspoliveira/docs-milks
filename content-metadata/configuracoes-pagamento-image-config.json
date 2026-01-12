@@ -1,0 +1,257 @@
+{
+  "pageName": "configuracoes-pagamento",
+  "title": "Configurações - Pagamento",
+  "description": "Formulário de configurações do módulo de pagamento",
+  "htmlPath": "/Applications/MAMP/htdocs/milks/web/src/secure/admin/configuracoes/views/configuracoes.pagamento.html",
+  "outputImage": "content/configuracoes-pagamento-form.png",
+  "autoDetectElements": false,
+  "autoUpdateConfig": false,
+  "processAngularTemplates": true,
+  "elements": [
+    {
+      "selector": "input[ng-model=\"record.pay_exibe_preco_liquido_demonstrativo\"]",
+      "number": 1,
+      "label": "Exibir preço líquido no demonstrativo",
+      "position": {
+        "top": "0px",
+        "left": "-35px"
+      }
+    },
+    {
+      "selector": "input[ng-model=\"record.pay_exibe_consolidacao_qualidade_demonstrativo\"]",
+      "number": 2,
+      "label": "Exibir consolidação de qualidade no demonstrativo",
+      "position": {
+        "top": "0px",
+        "left": "-35px"
+      }
+    },
+    {
+      "selector": "input[ng-model=\"record.pay_exibe_leite_fora_do_padrao_demonstrativo\"]",
+      "number": 3,
+      "label": "Exibir leite fora do padrão no demonstrativo",
+      "position": {
+        "top": "0px",
+        "left": "-35px"
+      }
+    },
+    {
+      "selector": "input[ng-model=\"record.pay_considera_volume_fora_padrao\"]",
+      "number": 4,
+      "label": "Considerar volume fora do padrão",
+      "position": {
+        "top": "0px",
+        "left": "-35px"
+      }
+    },
+    {
+      "selector": "input[ng-model=\"record.pay_pagamento_fazenda\"]",
+      "number": 5,
+      "label": "Pagamento por fazenda",
+      "position": {
+        "top": "0px",
+        "left": "-35px"
+      }
+    },
+    {
+      "selector": "input[ng-model=\"record.pay_bloqueia_pagamento_iepr_inativo\"]",
+      "number": 6,
+      "label": "Bloqueia pagamento quando IEPR estiver inativo",
+      "position": {
+        "top": "0px",
+        "left": "-35px"
+      }
+    },
+    {
+      "selector": "input[ng-model=\"record.pay_desconta_volume_agua\"]",
+      "number": 7,
+      "label": "Descontar volume de água automaticamente",
+      "position": {
+        "top": "0px",
+        "left": "-35px"
+      }
+    },
+    {
+      "selector": "input[ng-model=\"record.pay_exibe_desconto_crioscopia_demonstrativo\"]",
+      "number": 8,
+      "label": "Exibir desconto por crioscopia no demonstrativo",
+      "position": {
+        "top": "0px",
+        "left": "-35px"
+      }
+    },
+    {
+      "selector": "#pay_arredondamento_decimal_calculo_formula",
+      "number": 9,
+      "label": "Casas decimais na fórmula",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "#pay_formula_preco_medio",
+      "number": 10,
+      "label": "Fórmula do preço médio",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "#pay_natureza_operacao",
+      "number": 11,
+      "label": "Natureza de operação folha do produtor",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "#pay_natureza_rendimento",
+      "number": 12,
+      "label": "Natureza dos rendimentos",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "#pay_pis_leite",
+      "number": 13,
+      "label": "PIS e Cofins leite (%)",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "#pay_pis_frete",
+      "number": 14,
+      "label": "PIS e Cofins frete (%)",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "#pay_icms_leite",
+      "number": 15,
+      "label": "ICMS leite (%)",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "#pay_tabela_cepea_id",
+      "number": 16,
+      "label": "Tabela de referência CEPEA",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "#pay_decimais_valor_unitario",
+      "number": 17,
+      "label": "Precisão do valor unitário",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "input[ng-model=\"record.pay_oculta_preco_medio_demonstrativo\"]",
+      "number": 18,
+      "label": "Ocultar preço médio no demonstrativo",
+      "position": {
+        "top": "0px",
+        "left": "-35px"
+      }
+    },
+    {
+      "selector": "input[ng-model=\"record.pay_exibe_dados_nfe_demonstrativo\"]",
+      "number": 19,
+      "label": "Exibir dados da nota fiscal no demonstrativo",
+      "position": {
+        "top": "0px",
+        "left": "-35px"
+      }
+    },
+    {
+      "selector": "input[ng-model=\"record.pay_exibe_dados_tanque_comunitario_demonstrativo\"]",
+      "number": 20,
+      "label": "Exibir dados do tanque comunitário no demonstrativo",
+      "position": {
+        "top": "0px",
+        "left": "-35px"
+      }
+    },
+    {
+      "selector": "#pay_modelo_exportacao",
+      "number": 21,
+      "label": "Modelo de exportação",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "#pay_ordenacao_relatorio_completo",
+      "number": 22,
+      "label": "Ordenação dos registros no relatório",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "#pay_json_agrupador_composicao",
+      "number": 23,
+      "label": "Composição de agrupamento",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "#pay_json_codigos_agrupados",
+      "number": 24,
+      "label": "Composições agregadas",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "input[ng-model=\"record.pay_json_agrupa_creditos\"]",
+      "number": 25,
+      "label": "Agregar créditos na composição",
+      "position": {
+        "top": "0px",
+        "left": "-35px"
+      }
+    },
+    {
+      "selector": "#pay_google_sheet_id",
+      "number": 26,
+      "label": "ID da planilha de dados no Google",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    }
+  ],
+  "renderOptions": {
+    "viewport": {
+      "width": 1200,
+      "height": 2000,
+      "deviceScaleFactor": 2
+    },
+    "waitForSelector": ".element-number-badge",
+    "waitTimeout": 10000,
+    "fallbackWait": 2000
+  },
+  "customStyles": ""
+}

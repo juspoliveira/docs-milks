@@ -7,7 +7,7 @@ description: Parâmetros globais que afetam o comportamento do módulo de pagame
 Os ajustes iniciais que balizam os cálculos da folha, emissão de documentos e relatórios de saída devem ser feitos a partir das opções disponíveis neste módulo.
 
 <figure>
-  <img src="https://447677371-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FwyOmfrOj0hbYJWKsVGBS%2Fuploads%2Fg2VxmOiWM4qLQdpqTtN6%2Fpay-config-fiscais.png?alt=media&#x26;token=6379e38d-e95a-47a9-b953-cf4741c40185" alt="Tela de configurações do módulo Pay">
+  <img src="configuracoes-pagamento-form.png" alt="Tela de configurações do módulo Pay">
   <figcaption>Tela de configurações do módulo Pay</figcaption>
 </figure>
 

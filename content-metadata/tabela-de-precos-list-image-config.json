@@ -1,0 +1,52 @@
+{
+  "pageName": "Tabela de Preços - Listagem",
+  "htmlPath": "/Applications/MAMP/htdocs/milks/web/src/secure/pay/tabelapreco/views/tabelapreco.list.html",
+  "outputImage": "content/tabela-de-precos-list.png",
+  "renderOptions": {
+    "viewport": {
+      "width": 1400,
+      "height": 900,
+      "deviceScaleFactor": 2
+    }
+  },
+  "processAngularTemplates": true,
+  "autoDetectElements": false,
+  "elements": [
+    {
+      "selector": "button[ui-sref='app.pay-tabelapreco-create']",
+      "number": 1
+    },
+    {
+      "selector": "button[ng-click='filtro.open()']",
+      "number": 2
+    },
+    {
+      "selector": "th[md-order-by='codigo']",
+      "number": 3
+    },
+    {
+      "selector": "th[md-order-by='nome']",
+      "number": 4
+    },
+    {
+      "selector": "md-icon:first-of-type",
+      "number": 5
+    },
+    {
+      "selector": "md-icon:nth-of-type(2)",
+      "number": 6
+    },
+    {
+      "selector": "md-icon:last-of-type",
+      "number": 7
+    }
+  ],
+  "database": {
+    "enabled": true,
+    "dataFile": "content-metadata/tabela-de-precos-list-data.json"
+  },
+  "fillData": {
+    "enabled": true,
+    "mappings": {}
+  }
+}

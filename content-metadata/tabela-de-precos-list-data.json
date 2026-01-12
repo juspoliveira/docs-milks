@@ -1,0 +1,29 @@
+{
+  "records": [
+    {
+      "id": 1,
+      "codigo": "01.0",
+      "nome": "CEPEA"
+    },
+    {
+      "id": 2,
+      "codigo": "02",
+      "nome": "Preço base de Mercado"
+    },
+    {
+      "id": 5,
+      "codigo": null,
+      "nome": "CEPEA"
+    },
+    {
+      "id": 6,
+      "codigo": null,
+      "nome": "Mercado"
+    },
+    {
+      "id": 7,
+      "codigo": "1",
+      "nome": "MERCADO - LEITE REFRIGERADO"
+    }
+  ]
+}
