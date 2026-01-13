@@ -205,6 +205,98 @@ export function createFullHTML(formHTML, title = 'Formulário', elements = [], c
             display: inline-block !important;
             overflow: visible !important;
         }
+        /* Cards de estatísticas */
+        .card-group {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            position: relative !important;
+            overflow: visible !important;
+        }
+        .card {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            background: white !important;
+            border: 1px solid #ddd !important;
+            border-radius: 4px !important;
+            margin: 0 10px !important;
+            flex: 1 !important;
+            min-width: 0 !important;
+            position: relative !important;
+            overflow: visible !important;
+        }
+        .card-body {
+            position: relative !important;
+            overflow: visible !important;
+        }
+        .fs-widget-number-22 {
+            position: relative !important;
+            overflow: visible !important;
+        }
+        /* Garantir que cards tenham a mesma largura da tabela */
+        .core-ui-neton {
+            width: 100% !important;
+            max-width: 100% !important;
+            position: relative !important;
+            overflow: visible !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+        /* Alinhar cards com a margem esquerda da tabela */
+        .panel-body {
+            padding-left: 15px !important;
+            padding-right: 15px !important;
+        }
+        /* Garantir que o card-group comece na mesma posição da tabela */
+        .card-group {
+            margin-left: 0 !important;
+            padding-left: 0 !important;
+        }
+        /* Garantir que os painéis tenham a mesma largura da tabela */
+        .panel.panel-default {
+            box-sizing: border-box !important;
+        }
+        /* Remover padding dos containers para alinhamento */
+        .row {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+        .col-sm-12 {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+        table {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+        md-table-container, .table-responsive {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+        .card-body {
+            display: block !important;
+            visibility: visible !important;
+            padding: 15px !important;
+        }
+        .fs-widget-number-22 {
+            display: block !important;
+            visibility: visible !important;
+            font-size: 22px !important;
+            font-weight: bold !important;
+            color: #333 !important;
+            margin: 10px 0 !important;
+        }
+        .fs-widget-label {
+            display: block !important;
+            visibility: visible !important;
+            font-size: 12px !important;
+            color: #666 !important;
+        }
         md-table-container, .table-responsive {
             overflow: visible !important;
         }

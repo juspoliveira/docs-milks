@@ -74,6 +74,14 @@ export async function processAngularTemplates(page, additionalData = {}) {
                 } catch (e) {
                     console.warn('Erro ao inicializar ag-Grid:', e.message);
                 }
+            } else {
+                // Criar módulo mock para agGrid se não estiver disponível
+                try {
+                    angular.module('agGrid', []);
+                    console.log('Módulo mock agGrid criado');
+                } catch (e) {
+                    // Módulo já existe, tudo bem
+                }
             }
             
             // Create or get modules
@@ -88,7 +96,18 @@ export async function processAngularTemplates(page, additionalData = {}) {
             try {
                 appConsolidacao = angular.module('pay.consolidacaoqualidade');
             } catch (e) {
-                appConsolidacao = angular.module('pay.consolidacaoqualidade', ['agGrid']);
+                // Tentar criar sem agGrid primeiro, se falhar, criar com agGrid mock
+                try {
+                    appConsolidacao = angular.module('pay.consolidacaoqualidade', []);
+                } catch (e2) {
+                    // Se falhar, tentar com agGrid (que pode ser mock)
+                    try {
+                        angular.module('agGrid', []);
+                    } catch (e3) {
+                        // agGrid já existe
+                    }
+                    appConsolidacao = angular.module('pay.consolidacaoqualidade', ['agGrid']);
+                }
             }
             
             let appAjusteAcordo;
@@ -172,6 +191,273 @@ export async function processAngularTemplates(page, additionalData = {}) {
                     if ($scope.records.length > 0) {
                         console.log('Primeiro registro:', $scope.records[0]);
                     }
+                    
+                    // Force immediate digest
+                    if (!$scope.$$phase && !$scope.$root.$$phase) {
+                        $scope.$apply();
+                    }
+                }
+            ]);
+            
+            // Define the folha pagamento ListCtrl controller
+            appFolha.controller('folha.pagamento.ListCtrl', [
+                '$scope',
+                '$filter',
+                function($scope, $filter) {
+                    console.log('folha.pagamento.ListCtrl sendo inicializado...');
+                    
+                    // Get data from additionalData
+                    const pagamentoData = additionalData || {};
+                    
+                    // Initialize record
+                    $scope.record = pagamentoData.record || {
+                        id: 581,
+                        referencia: 'OUTUBRO 2025',
+                        status: 'A',
+                        simulacao: 0,
+                        forcar_recalculo: 0
+                    };
+                    
+                    // Initialize statistics
+                    $scope.estatisticasFolha = pagamentoData.estatisticasFolha || {
+                        totalDemonstrativos: 0,
+                        volumeCaptado: 0,
+                        totalBruto: 0,
+                        totalLiquido: 0,
+                        precoMedio: 0
+                    };
+                    
+                    // Initialize pagamentos
+                    const pagamentosData = pagamentoData.pagamentos || [];
+                    // Mapear total_deducao para total_impostodeducao se necessário (para compatibilidade com HTML)
+                    const pagamentosMapped = pagamentosData.map(p => {
+                        const mapped = JSON.parse(JSON.stringify(p));
+                        // Se não tem total_impostodeducao mas tem total_deducao, criar ambos
+                        if (!mapped.total_impostodeducao && mapped.total_deducao !== undefined) {
+                            mapped.total_impostodeducao = mapped.total_deducao;
+                        }
+                        return mapped;
+                    });
+                    $scope.pagamentos = pagamentosMapped;
+                    
+                    // Initialize filtered results
+                    $scope.resultadosFiltrados = JSON.parse(JSON.stringify(pagamentosMapped));
+                    
+                    // Initialize filter
+                    $scope.filter = {
+                        produtor: ''
+                    };
+                    $scope.opcaoFiltro = 'todosOsCampos';
+                    
+                    // Mock functions
+                    $scope.setOpcaoFiltro = function(opcao) {
+                        $scope.opcaoFiltro = opcao;
+                    };
+                    $scope.reloadData = function() {};
+                    $scope.recalculaPagamentos = function() {};
+                    $scope.calculaPagamentos = function() {};
+                    $scope.fecharFolha = function() {};
+                    $scope.emiteNfes = function() {};
+                    $scope.exportarFolhas = function() {};
+                    $scope.exportarDemonstrativos = function() {};
+                    $scope.exportarXmlNfe = function() {};
+                    $scope.openModalPublicarDemonstrativos = function() {};
+                    $scope.openModalPublicarNotasFiscais = function() {};
+                    $scope.openModalParametroSimulacao = function() {};
+                    $scope.abreModalImportDeducao = function() {};
+                    $scope.abreModalCredito = function() {};
+                    $scope.abreModalDeducao = function() {};
+                    $scope.recalculaPagamento = function() {};
+                    $scope.print = function() {};
+                    
+                    // Mock service
+                    $scope.service = {
+                        sort: null
+                    };
+                    
+                    // Mock view state
+                    $scope.viewState = 'edit';
+                    $scope.isCalculating = false; // CRÍTICO: deve ser false para mostrar cards
+                    $scope.isExportingDemonstrativos = false;
+                    $scope.isEmitindoNfe = false;
+                    
+                    // Garantir que os cards sejam renderizados imediatamente
+                    $scope.$watch('isCalculating', function(newVal) {
+                        if (newVal === true) {
+                            $scope.isCalculating = false; // Forçar false
+                        }
+                    });
+                    
+                    // Watch filter changes
+                    $scope.$watch('filter.produtor', function(newVal) {
+                        if (!newVal || newVal === '') {
+                            $scope.resultadosFiltrados = $scope.pagamentos;
+                            return;
+                        }
+                        
+                        const filterValue = newVal.toLowerCase();
+                        $scope.resultadosFiltrados = $scope.pagamentos.filter(function(pagamento) {
+                            if ($scope.opcaoFiltro === 'todosOsCampos') {
+                                return (
+                                    (pagamento.nomeProdutor && pagamento.nomeProdutor.toLowerCase().includes(filterValue)) ||
+                                    (pagamento.produtor && pagamento.produtor.toLowerCase().includes(filterValue)) ||
+                                    (pagamento.fazenda && pagamento.fazenda && pagamento.fazenda.toLowerCase().includes(filterValue)) ||
+                                    (pagamento.modelo && pagamento.modelo.toLowerCase().includes(filterValue))
+                                );
+                            } else if ($scope.opcaoFiltro === 'nomeProdutor') {
+                                return pagamento.nomeProdutor && pagamento.nomeProdutor.toLowerCase().includes(filterValue);
+                            } else if ($scope.opcaoFiltro === 'fazenda') {
+                                return pagamento.fazenda && pagamento.fazenda.toLowerCase().includes(filterValue);
+                            }
+                            return true;
+                        });
+                    }, true); // Deep watch
+                    
+                    // Initialize resultadosFiltrados with all pagamentos
+                    $scope.resultadosFiltrados = JSON.parse(JSON.stringify($scope.pagamentos));
+                    
+                    console.log('folha.pagamento.ListCtrl inicializado com', $scope.pagamentos.length, 'pagamentos');
+                    console.log('   Estatísticas:', $scope.estatisticasFolha);
+                    console.log('   Record:', $scope.record);
+                    
+                    // Force immediate digest
+                    if (!$scope.$$phase && !$scope.$root.$$phase) {
+                        $scope.$apply();
+                    }
+                }
+            ]);
+            
+            // Define the folha CreateCtrl controller
+            appFolha.controller('folha.CreateCtrl', [
+                '$scope',
+                function($scope) {
+                    console.log('folha.CreateCtrl sendo inicializado...');
+                    
+                    // Get data from additionalData
+                    const formData = additionalData && additionalData.record ? additionalData : {};
+                    
+                    // Initialize record with default values
+                    $scope.record = formData.record || {
+                        status: 'A',
+                        simulacao: 0,
+                        codigo: '',
+                        referencia: '',
+                        consolidacao_id: null,
+                        tipo_data_corte: 'V',
+                        dt_inicio_fornecimento: '',
+                        dt_fim_fornecimento: ''
+                    };
+                    
+                    // Set consolidations list
+                    $scope.consolidacoes = formData.consolidacoes || [];
+                    
+                    // Set status options
+                    $scope.statusFolha = formData.statusFolha || [
+                        {id: 'A', nome: 'Aberta'},
+                        {id: 'B', nome: 'Bloqueada'},
+                        {id: 'F', nome: 'Fechada'}
+                    ];
+                    
+                    // Set type options
+                    $scope.tiposFolha = formData.tiposFolha || [
+                        {id: 0, nome: 'Folha'},
+                        {id: 1, nome: 'Simulação'}
+                    ];
+                    
+                    // Set data cut type options
+                    $scope.tiposDataCorte = formData.tiposDataCorte || [
+                        {id: 'C', display: 'Coleta'},
+                        {id: 'V', display: 'Viagem'}
+                    ];
+                    
+                    // Set view state
+                    $scope.viewState = 'create';
+                    $scope.isSubmited = false;
+                    $scope.hasRecord = true;
+                    
+                    // Mock form object
+                    $scope.forms = {
+                        folha: {}
+                    };
+                    
+                    // Mock service and API
+                    $scope.service = {};
+                    $scope.api = {
+                        save: function() { return Promise.resolve({success: true}); }
+                    };
+                    
+                    console.log('folha.CreateCtrl inicializado com record:', $scope.record);
+                    
+                    // Force immediate digest
+                    if (!$scope.$$phase && !$scope.$root.$$phase) {
+                        $scope.$apply();
+                    }
+                }
+            ]);
+            
+            // Define the folha EditCtrl controller
+            appFolha.controller('folha.EditCtrl', [
+                '$scope',
+                function($scope) {
+                    console.log('folha.EditCtrl sendo inicializado...');
+                    
+                    // Get data from additionalData
+                    const formData = additionalData && additionalData.record ? additionalData : {};
+                    
+                    // Initialize record with data
+                    $scope.record = formData.record || {
+                        id: 1,
+                        codigo: 'FOL-2025-10',
+                        referencia: 'OUTUBRO 2025',
+                        status: 'A',
+                        simulacao: 0,
+                        consolidacao_id: 547,
+                        tipo_data_corte: 'V',
+                        dt_inicio_fornecimento: '2025-10-01',
+                        dt_fim_fornecimento: '2025-10-31'
+                    };
+                    
+                    // Set consolidations list
+                    $scope.consolidacoes = formData.consolidacoes || [];
+                    
+                    // Set status options
+                    $scope.statusFolha = formData.statusFolha || [
+                        {id: 'A', nome: 'Aberta'},
+                        {id: 'B', nome: 'Bloqueada'},
+                        {id: 'F', nome: 'Fechada'}
+                    ];
+                    
+                    // Set type options
+                    $scope.tiposFolha = formData.tiposFolha || [
+                        {id: 0, nome: 'Folha'},
+                        {id: 1, nome: 'Simulação'}
+                    ];
+                    
+                    // Set data cut type options
+                    $scope.tiposDataCorte = formData.tiposDataCorte || [
+                        {id: 'C', display: 'Coleta'},
+                        {id: 'V', display: 'Viagem'}
+                    ];
+                    
+                    // Set view state
+                    $scope.viewState = 'edit';
+                    $scope.isSubmited = false;
+                    $scope.hasRecord = true;
+                    $scope.consolidacaoAtualId = $scope.record.consolidacao_id;
+                    
+                    // Mock form object
+                    $scope.forms = {
+                        folha: {}
+                    };
+                    
+                    // Mock service and API
+                    $scope.service = {};
+                    $scope.api = {
+                        save: function() { return Promise.resolve({success: true}); },
+                        get: function() { return Promise.resolve($scope.record); }
+                    };
+                    
+                    console.log('folha.EditCtrl inicializado com record:', $scope.record);
                     
                     // Force immediate digest
                     if (!$scope.$$phase && !$scope.$root.$$phase) {
@@ -861,30 +1147,33 @@ export async function processAngularTemplates(page, additionalData = {}) {
             let injector = angular.element(body).injector();
             
             if (!injector) {
-                try {
-                    // Bootstrap with all modules including pay.imposto and pay.tabelapreco
-                    angular.bootstrap(body, ['pay.modelopagamento', 'pay.consolidacaoqualidade', 'pay.ajusteacordo', 'pay.imposto', 'pay.tabelapreco', 'ngMaterial']);
-                    injector = angular.element(body).injector();
-                    console.log('AngularJS bootstrapped com módulos:', 'pay.modelopagamento', 'pay.consolidacaoqualidade', 'pay.ajusteacordo', 'pay.imposto', 'pay.tabelapreco', 'ngMaterial');
-                } catch (e) {
-                    console.warn('Erro ao fazer bootstrap do AngularJS:', e.message);
-                    // Try without ajusteacordo module
+                // Lista de módulos a tentar bootstrap, incluindo pay.folha
+                const modulesToTry = [
+                    ['pay.modelopagamento', 'pay.consolidacaoqualidade', 'pay.ajusteacordo', 'pay.imposto', 'pay.tabelapreco', 'pay.folha', 'ngMaterial'],
+                    ['pay.modelopagamento', 'pay.consolidacaoqualidade', 'pay.imposto', 'pay.tabelapreco', 'pay.folha', 'ngMaterial'],
+                    ['pay.imposto', 'pay.tabelapreco', 'pay.folha'],
+                    ['pay.folha']
+                ];
+                
+                let bootstrapped = false;
+                for (let i = 0; i < modulesToTry.length; i++) {
                     try {
-                        angular.bootstrap(body, ['pay.modelopagamento', 'pay.consolidacaoqualidade', 'pay.imposto', 'pay.tabelapreco', 'ngMaterial']);
+                        angular.bootstrap(body, modulesToTry[i]);
                         injector = angular.element(body).injector();
-                        console.log('AngularJS bootstrapped sem pay.ajusteacordo');
-                    } catch (e2) {
-                        console.warn('Erro ao fazer bootstrap alternativo:', e2.message);
-                        // Try with just pay.imposto and pay.tabelapreco
-                        try {
-                            angular.bootstrap(body, ['pay.imposto']);
-                            injector = angular.element(body).injector();
-                            console.log('AngularJS bootstrapped apenas com pay.imposto');
-                        } catch (e3) {
-                            console.warn('Erro ao fazer bootstrap mínimo:', e3.message);
+                        console.log(`AngularJS bootstrapped com módulos: ${modulesToTry[i].join(', ')}`);
+                        bootstrapped = true;
+                        break;
+                    } catch (e) {
+                        if (i === modulesToTry.length - 1) {
+                            console.warn('Erro ao fazer bootstrap com todos os módulos tentados:', e.message);
                             return false;
                         }
+                        console.warn(`Erro ao fazer bootstrap com módulos ${modulesToTry[i].join(', ')}, tentando próximo...`);
                     }
+                }
+                
+                if (!bootstrapped) {
+                    return false;
                 }
             } else {
                 console.log('AngularJS já estava bootstrapped');

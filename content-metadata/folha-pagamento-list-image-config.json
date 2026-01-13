@@ -1,0 +1,159 @@
+{
+  "pageName": "Folha de Pagamento - Aba Pagamentos",
+  "htmlPath": "/Applications/MAMP/htdocs/milks/web/src/secure/pay/folha/views/folha.pagamento.list.html",
+  "outputImage": "content/folha-pagamento-list.png",
+  "renderOptions": {
+    "viewport": {
+      "width": 1800,
+      "height": 1200,
+      "deviceScaleFactor": 2
+    }
+  },
+  "processAngularTemplates": true,
+  "autoDetectElements": false,
+  "elements": [
+    {
+      "selector": "button.btn-default.btn-sm[data-toggle='dropdown']:first-of-type",
+      "number": 1,
+      "label": "Botão Ações",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": ".card-group .card:first-child .fs-widget-number-22",
+      "number": 2,
+      "label": "Demonstrativos na folha",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": ".card-group .card:nth-of-type(2) .fs-widget-number-22",
+      "number": 3,
+      "label": "Volume captado",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": ".card-group .card:nth-of-type(3) .fs-widget-number-22",
+      "number": 4,
+      "label": "Total bruto da folha",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": ".card-group .card:nth-of-type(4) .fs-widget-number-22",
+      "number": 5,
+      "label": "Total líquido da folha",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": ".card-group .card:nth-of-type(5) .fs-widget-number-22",
+      "number": 6,
+      "label": "Preço médio / litro",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "input[placeholder='Filtrar']",
+      "number": 7,
+      "label": "Campo de filtro",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "thead th:first-of-type",
+      "number": 8,
+      "label": "Coluna FORNECIMENTO",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "thead th:nth-of-type(2)",
+      "number": 9,
+      "label": "Coluna VALOR BRUTO",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "thead th:nth-of-type(3)",
+      "number": 10,
+      "label": "Coluna CRÉDITOS",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "thead th:nth-of-type(4)",
+      "number": 11,
+      "label": "Coluna DEDUÇÕES",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "thead th:nth-of-type(5)",
+      "number": 12,
+      "label": "Coluna A RECEBER",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "ul.dropdown-menu li a[ng-click='recalculaPagamentos()']",
+      "number": 13,
+      "label": "Ação Recalcular folha",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "tbody tr:nth-child(2) td:last-child .action-icon:first-of-type, tbody tr:nth-child(2) td:last-child button:first-of-type .material-icons",
+      "number": 14,
+      "label": "Ícone Recalcular pagamento",
+      "position": {
+        "top": "-5px",
+        "right": "-5px"
+      }
+    },
+    {
+      "selector": "tbody tr:nth-child(2) td:last-child .action-icon:nth-of-type(2), tbody tr:nth-child(2) td:last-child button:nth-of-type(2) .material-icons",
+      "number": 15,
+      "label": "Ícone Imprimir",
+      "position": {
+        "top": "-5px",
+        "right": "-5px"
+      }
+    }
+  ],
+  "database": {
+    "enabled": true,
+    "dataFile": "content-metadata/folha-pagamento-list-data.json"
+  },
+  "fillData": {
+    "enabled": true,
+    "mappings": {}
+  }
+}

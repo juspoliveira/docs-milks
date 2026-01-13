@@ -94,30 +94,81 @@ async function getElementCoordinates(page, selector, position) {
 
 /**
  * Calculate coordinates based on image structure (fallback when Puppeteer is not available)
- * Coordenadas baseadas na análise visual da imagem 2234x1452
+ * Coordenadas baseadas na análise visual da imagem
  */
 function calculateCoordinatesFromConfig(config, imageWidth, imageHeight) {
-    // Coordenadas baseadas na imagem real (2234x1452)
-    // Ajustadas proporcionalmente para a imagem atual
-    const baseWidth = 2234;
-    const baseHeight = 1452;
+    // Detectar tipo de imagem baseado no nome da página ou caminho
+    const isFolhaList = config.pageName && config.pageName.includes('Listagem');
+    const isFolhaForm = config.pageName && config.pageName.includes('Formulário');
+    
+    let baseWidth, baseHeight, baseCoords;
+    
+    if (isFolhaForm) {
+        // Coordenadas para formulário de folha (2800x1400 base)
+        baseWidth = 2800;
+        baseHeight = 1400;
+        // Coordenadas estimadas baseadas na estrutura do formulário
+        // Primeira linha: Código, Consolidação, Referência, Data de corte por
+        // Segunda linha: Data inicial, Data final, Status, Tipo
+        baseCoords = {
+            1: { x: 200, y: 200 },    // Código (primeira linha, primeira coluna)
+            2: { x: 800, y: 200 },    // Consolidação (primeira linha, segunda coluna)
+            3: { x: 1400, y: 200 },   // Referência (primeira linha, terceira coluna)
+            4: { x: 2000, y: 200 },   // Data de corte por (primeira linha, quarta coluna)
+            5: { x: 400, y: 500 },    // Data de corte inicial (segunda linha, primeira coluna)
+            6: { x: 1000, y: 500 },   // Data de corte final (segunda linha, segunda coluna)
+            7: { x: 1600, y: 500 },   // Status (segunda linha, terceira coluna)
+            8: { x: 2200, y: 500 }    // Tipo (segunda linha, quarta coluna)
+        };
+    } else if (config.pageName && config.pageName.includes('Aba Pagamentos')) {
+        // Coordenadas para aba de pagamentos (3600x2400 base)
+        baseWidth = 3600;
+        baseHeight = 2400;
+        // Coordenadas estimadas baseadas na estrutura da aba de pagamentos
+        baseCoords = {
+            1: { x: 100, y: 100 },    // Título/Resumo
+            2: { x: 1600, y: 100 },   // Botão Ações
+            3: { x: 200, y: 400 },    // Card Demonstrativos
+            4: { x: 600, y: 400 },    // Card Volume captado
+            5: { x: 1000, y: 400 },   // Card Total bruto
+            6: { x: 1400, y: 400 },   // Card Total líquido
+            7: { x: 1800, y: 400 },   // Card Preço médio
+            8: { x: 100, y: 800 },    // Título Lista de pagamentos
+            9: { x: 1400, y: 800 },   // Campo de filtro
+            10: { x: 100, y: 1000 },  // Coluna FORNECIMENTO
+            11: { x: 400, y: 1000 },  // Coluna VALOR BRUTO
+            12: { x: 700, y: 1000 },  // Coluna CRÉDITOS
+            13: { x: 1000, y: 1000 }, // Coluna DEDUÇÕES
+            14: { x: 1300, y: 1000 }, // Coluna A RECEBER
+            15: { x: 1600, y: 1200 }, // Ícone Recalcular
+            16: { x: 1650, y: 1200 }  // Ícone Imprimir
+        };
+    } else if (isFolhaList) {
+        // Coordenadas para listagem de folha (2234x1452 base)
+        baseWidth = 2234;
+        baseHeight = 1452;
+        baseCoords = {
+            1: { x: 1950, y: 110 },   // Botão "Nova folha" (canto superior direito)
+            2: { x: 1950, y: 165 },   // Dropdown "Simulação" (abaixo do botão)
+            3: { x: 1800, y: 110 },   // Botão "Filtrar"
+            4: { x: 70, y: 280 },     // Coluna "FOLHA"
+            5: { x: 840, y: 280 },    // Coluna "FORNECIMENTO"
+            6: { x: 1120, y: 280 },   // Coluna "TOTAL BRUTO"
+            7: { x: 1400, y: 280 },   // Coluna "PREÇO MÉDIO"
+            8: { x: 1680, y: 280 },   // Coluna "STATUS"
+            9: { x: 1970, y: 280 },   // Ícone "Visualizar" (alinhado verticalmente com badge 2, um pouco mais à direita)
+            10: { x: 2030, y: 280 },  // Ícone "Editar" (alinhado verticalmente com badge 2, espaçado)
+            11: { x: 2090, y: 280 }   // Ícone "Excluir" (alinhado verticalmente com badge 2, espaçado)
+        };
+    } else {
+        // Fallback para outras imagens
+        baseWidth = 2234;
+        baseHeight = 1452;
+        baseCoords = {};
+    }
+    
     const scaleX = imageWidth / baseWidth;
     const scaleY = imageHeight / baseHeight;
-    
-    // Coordenadas na imagem base (2234x1452)
-    const baseCoords = {
-        1: { x: 1950, y: 110 },   // Botão "Nova folha" (canto superior direito)
-        2: { x: 1950, y: 165 },   // Dropdown "Simulação" (abaixo do botão)
-        3: { x: 1800, y: 110 },   // Botão "Filtrar"
-        4: { x: 70, y: 280 },     // Coluna "FOLHA"
-        5: { x: 840, y: 280 },    // Coluna "FORNECIMENTO"
-        6: { x: 1120, y: 280 },   // Coluna "TOTAL BRUTO"
-        7: { x: 1400, y: 280 },   // Coluna "PREÇO MÉDIO"
-        8: { x: 1680, y: 280 },   // Coluna "STATUS"
-        9: { x: 1970, y: 280 },   // Ícone "Visualizar" (alinhado verticalmente com badge 2, um pouco mais à direita)
-        10: { x: 2030, y: 280 },  // Ícone "Editar" (alinhado verticalmente com badge 2, espaçado)
-        11: { x: 2090, y: 280 }   // Ícone "Excluir" (alinhado verticalmente com badge 2, espaçado)
-    };
     
     const coordinates = [];
     for (const element of config.elements || []) {

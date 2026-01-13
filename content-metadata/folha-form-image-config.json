@@ -1,0 +1,117 @@
+{
+  "pageName": "Formulário de Folha de Pagamento",
+  "htmlPath": "/Applications/MAMP/htdocs/milks/web/src/secure/pay/folha/views/folha.tab.html",
+  "outputImage": "content/folha-form.png",
+  "renderOptions": {
+    "viewport": {
+      "width": 1400,
+      "height": 700,
+      "deviceScaleFactor": 2
+    }
+  },
+  "baseImageDimensions": {
+    "width": 2800,
+    "height": 1400
+  },
+  "processAngularTemplates": true,
+  "autoDetectElements": false,
+  "elements": [
+    {
+      "selector": "#codigo",
+      "number": 1,
+      "label": "Código",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "#cons",
+      "number": 2,
+      "label": "Consolidação",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "#refer",
+      "number": 3,
+      "label": "Referência",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "#tipo_data_corte",
+      "number": 4,
+      "label": "Data de corte por",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "#dt_inicio",
+      "number": 5,
+      "label": "Data de corte inicial",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "#dt_fim",
+      "number": 6,
+      "label": "Data de corte final",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "#status",
+      "number": 7,
+      "label": "Status",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    },
+    {
+      "selector": "#tipo",
+      "number": 8,
+      "label": "Tipo",
+      "position": {
+        "top": "-12px",
+        "right": "5px"
+      }
+    }
+  ],
+  "database": {
+    "enabled": true,
+    "dataFile": "content-metadata/folha-form-data.json"
+  },
+  "fillData": {
+    "enabled": true,
+    "mappings": {
+      "#codigo": {
+        "field": "record.codigo",
+        "type": "text"
+      },
+      "#refer": {
+        "field": "record.referencia",
+        "type": "text"
+      },
+      "#dt_inicio": {
+        "field": "record.dt_inicio_fornecimento",
+        "type": "date"
+      },
+      "#dt_fim": {
+        "field": "record.dt_fim_fornecimento",
+        "type": "date"
+      }
+    }
+  }
+}

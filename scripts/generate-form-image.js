@@ -288,6 +288,54 @@ async function generateFormImage(config, databaseRecord = null) {
                         }
                         console.log('   ✅ Adicionado ng-controller="tabelapreco.ValorModalCtrl"');
                         }
+                } else if (data.record && data.pagamentos && Array.isArray(data.pagamentos)) {
+                    // Estrutura de aba de pagamentos (com record, estatisticasFolha e pagamentos)
+                    additionalData.record = data.record;
+                    additionalData.estatisticasFolha = data.estatisticasFolha || {};
+                    additionalData.pagamentos = data.pagamentos || [];
+                    console.log(`   📊 Carregados dados da aba de pagamentos "${data.record.referencia || 'Folha'}" com ${additionalData.pagamentos.length} pagamentos (fallback)`);
+                    dataLoaded = true;
+                    
+                    // Adicionar ng-controller para aba de pagamentos
+                    if (!formHTML.includes('ng-controller="folha.pagamento.ListCtrl"') && formHTML.includes('ng-repeat="pagamento in')) {
+                        const controllerName = 'folha.pagamento.ListCtrl';
+                        
+                        // Adicionar ng-controller ao wrapper-xs ou primeiro div
+                        if (formHTML.includes('<div') && formHTML.includes('wrapper-xs') && !formHTML.includes('ng-controller')) {
+                            formHTML = formHTML.replace(/<div([^>]*class="[^"]*wrapper-xs[^"]*")/i, `<div$1 ng-controller="${controllerName}"`);
+                            console.log(`   ✅ Adicionado ng-controller="${controllerName}" ao wrapper-xs`);
+                        } else if (formHTML.includes('<div') && !formHTML.includes('ng-controller')) {
+                            formHTML = formHTML.replace(/<div([^>]*class="[^"]*")/i, `<div$1 ng-controller="${controllerName}"`);
+                            console.log(`   ✅ Adicionado ng-controller="${controllerName}" ao primeiro div`);
+                        }
+                    }
+                } else if (data.record && (data.consolidacoes || data.statusFolha || data.tiposFolha)) {
+                    // Estrutura de formulário de folha (com record e opções)
+                    additionalData.record = data.record;
+                    additionalData.consolidacoes = data.consolidacoes || [];
+                    additionalData.statusFolha = data.statusFolha || [];
+                    additionalData.tiposFolha = data.tiposFolha || [];
+                    additionalData.tiposDataCorte = data.tiposDataCorte || [];
+                    console.log(`   📊 Carregados dados do formulário de folha "${data.record.referencia || data.record.codigo || 'Nova folha'}" (fallback)`);
+                    dataLoaded = true;
+                    
+                    // Adicionar ng-controller para formulário de folha
+                    if (!formHTML.includes('ng-controller="folha.') && formHTML.includes('name="forms.folha"')) {
+                        // Detectar se é criação ou edição baseado na presença de id
+                        let controllerName = 'folha.CreateCtrl';
+                        if (data.record.id) {
+                            controllerName = 'folha.EditCtrl';
+                        }
+                        
+                        // Adicionar ng-controller ao form ou panel-body
+                        if (formHTML.includes('<form') && !formHTML.includes('ng-controller')) {
+                            formHTML = formHTML.replace(/<form([^>]*name="forms\.folha")/i, `<form$1 ng-controller="${controllerName}"`);
+                            console.log(`   ✅ Adicionado ng-controller="${controllerName}" ao form`);
+                        } else if (formHTML.includes('<div') && formHTML.includes('panel-body') && !formHTML.includes('ng-controller')) {
+                            formHTML = formHTML.replace(/<div([^>]*class="[^"]*panel-body[^"]*")/i, `<div$1 ng-controller="${controllerName}"`);
+                            console.log(`   ✅ Adicionado ng-controller="${controllerName}" ao panel-body`);
+                        }
+                    }
                 } else {
                     // Estrutura de lista simples (records)
                     // Verificar se data tem propriedade records
@@ -413,6 +461,138 @@ async function generateFormImage(config, databaseRecord = null) {
     
     // Pre-processar HTML para criar linhas da tabela ANTES da conversão (Abordagem 2)
     // Isso garante que o template seja encontrado antes da conversão remover atributos
+    
+    // Processar ng-repeat-start/end para aba de pagamentos
+    if (additionalData.pagamentos && additionalData.pagamentos.length > 0 && (formHTML.includes('ng-repeat-start="pagamento in') || formHTML.includes('ng-repeat-start=\'pagamento in'))) {
+        console.log('🔄 Pré-processando HTML para criar linhas da tabela de pagamentos (ng-repeat-start/end)...');
+        console.log(`   📊 Total de pagamentos: ${additionalData.pagamentos.length}`);
+        
+        // Encontrar o tbody que contém o ng-repeat-start
+        let tbodyStartRegex = /<tbody[^>]*md-body[^>]*>/;
+        let tbodyMatch = formHTML.match(tbodyStartRegex);
+        if (!tbodyMatch) {
+            tbodyStartRegex = /<tbody[^>]*>/;
+            tbodyMatch = formHTML.match(tbodyStartRegex);
+        }
+        
+        if (tbodyMatch) {
+            const tbodyStartIndex = formHTML.indexOf(tbodyMatch[0]);
+            const tbodyStartTag = tbodyMatch[0];
+            
+            // Encontrar o conteúdo do tbody até o próximo </tbody>
+            let tbodyEndIndex = formHTML.indexOf('</tbody>', tbodyStartIndex);
+            if (tbodyEndIndex === -1) {
+                tbodyEndIndex = formHTML.indexOf('</tbody>', tbodyStartIndex + tbodyStartTag.length);
+            }
+            
+            if (tbodyEndIndex !== -1) {
+                const tbodyContent = formHTML.substring(tbodyStartIndex + tbodyStartTag.length, tbodyEndIndex);
+                console.log(`   📋 Tbody encontrado, tamanho do conteúdo: ${tbodyContent.length} caracteres`);
+                
+                // Encontrar o template de linha com ng-repeat-start (mais flexível)
+                // Pode ter aspas simples ou duplas, e pode ter espaços extras
+                const trStartRegex = /<tr[^>]*ng-repeat-start\s*=\s*["']pagamento\s+in\s+resultadosFiltrados[^>]*>([\s\S]*?)<\/tr>[\s\S]*?<tr[^>]*ng-repeat-end[^>]*>([\s\S]*?)<\/tr>/;
+                let trMatch = tbodyContent.match(trStartRegex);
+                
+                if (!trMatch) {
+                    // Tentar com regex mais flexível
+                    const trStartRegex2 = /<tr[^>]*ng-repeat-start[^>]*pagamento[^>]*in[^>]*resultadosFiltrados[^>]*>([\s\S]*?)<\/tr>[\s\S]*?<tr[^>]*ng-repeat-end[^>]*>([\s\S]*?)<\/tr>/;
+                    trMatch = tbodyContent.match(trStartRegex2);
+                }
+                
+                if (trMatch) {
+                    const headerRowHTML = trMatch[1]; // Linha de cabeçalho do produtor
+                    const dataRowHTML = trMatch[2];   // Linha de dados do pagamento
+                    
+                    console.log(`   📊 Encontrado template de pagamento. Criando ${additionalData.pagamentos.length} linhas...`);
+                    console.log(`   📋 Tamanho do headerRow: ${headerRowHTML.length} caracteres`);
+                    console.log(`   📋 Tamanho do dataRow: ${dataRowHTML.length} caracteres`);
+                    
+                    // Criar novas linhas para cada pagamento
+                    let newRowsHTML = '';
+                    for (let i = 0; i < additionalData.pagamentos.length; i++) {
+                        const pagamento = additionalData.pagamentos[i];
+                        
+                        // Processar linha de cabeçalho (nome do produtor, badges, etc.)
+                        let headerRow = headerRowHTML;
+                        headerRow = headerRow.replace(/\{\{pagamento\.nomeProdutor\}\}/g, pagamento.nomeProdutor || '');
+                        headerRow = headerRow.replace(/\{\{pagamento\.produtor\}\}/g, pagamento.produtor || '');
+                        headerRow = headerRow.replace(/\{\{pagamento\.fazenda\}\}/g, pagamento.fazenda || '');
+                        headerRow = headerRow.replace(/\{\{pagamento\.modelo\}\}/g, pagamento.modelo || '');
+                        headerRow = headerRow.replace(/\{\{pagamento\.preco_medio\s*\|\s*number:3\}\}/g, (pagamento.preco_medio || 0).toFixed(3));
+                        headerRow = headerRow.replace(/\{\{pagamento\.preco_medio\s*\|\|\s*0\s*\|\s*number:3\}\}/g, (pagamento.preco_medio || 0).toFixed(3));
+                        headerRow = headerRow.replace(/\{\{pagamento\.codigo_erro[^}]*\}\}/g, ''); // Remover condições de erro
+                        
+                        // Processar linha de dados (valores)
+                        let dataRow = dataRowHTML;
+                        dataRow = dataRow.replace(/\{\{pagamento\.volume\s*\|\s*number:0\}\}/g, (pagamento.volume || 0).toLocaleString('pt-BR'));
+                        dataRow = dataRow.replace(/\{\{pagamento\.volume\s*\|\|\s*0\s*\|\s*number:0\}\}/g, (pagamento.volume || 0).toLocaleString('pt-BR'));
+                        dataRow = dataRow.replace(/\{\{pagamento\.total_fornecimento[^}]*\}\}/g, new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(pagamento.total_fornecimento || 0));
+                        dataRow = dataRow.replace(/\{\{pagamento\.total_credito[^}]*\}\}/g, new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(pagamento.total_credito || 0));
+                        // Substituir total_impostodeducao (usar total_deducao dos dados)
+                        dataRow = dataRow.replace(/\{\{pagamento\.total_impostodeducao[^}]*\}\}/g, new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(pagamento.total_deducao || pagamento.total_impostodeducao || 0));
+                        dataRow = dataRow.replace(/\{\{pagamento\.total_deducao[^}]*\}\}/g, new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(pagamento.total_deducao || 0));
+                        dataRow = dataRow.replace(/\{\{pagamento\.total_pagamento[^}]*\}\}/g, new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(pagamento.total_pagamento || 0));
+                        
+                        // Remover ng-repeat-start e ng-repeat-end e outros atributos AngularJS
+                        headerRow = headerRow.replace(/\s+ng-repeat-start\s*=\s*["'][^"']*["']/g, '');
+                        headerRow = headerRow.replace(/\s+ng-repeat-end/g, '');
+                        headerRow = headerRow.replace(/\s+ng-if="[^"]*"/g, ''); // Remover ng-if condicionais
+                        headerRow = headerRow.replace(/\s+ng-if='[^']*'/g, ''); // Remover ng-if com aspas simples
+                        dataRow = dataRow.replace(/\s+ng-repeat-end/g, '');
+                        dataRow = dataRow.replace(/\s+ng-if="[^"]*"/g, ''); // Remover ng-if condicionais
+                        dataRow = dataRow.replace(/\s+ng-if='[^']*'/g, ''); // Remover ng-if com aspas simples
+                        dataRow = dataRow.replace(/\s+ng-click="[^"]*"/g, ''); // Remover ng-click
+                        dataRow = dataRow.replace(/\s+uib-tooltip="[^"]*"/g, ''); // Remover tooltips
+                        
+                        // Remover atributos md-* que podem causar problemas
+                        headerRow = headerRow.replace(/\s+md-row/g, '');
+                        headerRow = headerRow.replace(/\s+md-cell/g, '');
+                        dataRow = dataRow.replace(/\s+md-row/g, '');
+                        dataRow = dataRow.replace(/\s+md-cell/g, '');
+                        
+                        // Converter md-icon para span
+                        headerRow = headerRow.replace(/<md-icon([^>]*)>([\s\S]*?)<\/md-icon>/g, (match, attrs, content) => {
+                            return `<span class="material-icons action-icon" style="font-family: Material Icons; cursor: pointer; color: #666; display: inline-block; margin: 0 4px;">${content.trim()}</span>`;
+                        });
+                        dataRow = dataRow.replace(/<md-icon([^>]*)>([\s\S]*?)<\/md-icon>/g, (match, attrs, content) => {
+                            return `<span class="material-icons action-icon" style="font-family: Material Icons; cursor: pointer; color: #666; display: inline-block; margin: 0 4px;">${content.trim()}</span>`;
+                        });
+                        
+                        // Converter md-button para button
+                        dataRow = dataRow.replace(/<md-button([^>]*)>([\s\S]*?)<\/md-button>/g, '<button$1>$2</button>');
+                        
+                        newRowsHTML += `<tr>${headerRow}</tr>\n<tr>${dataRow}</tr>\n`;
+                    }
+                    
+                    // Remover o tbody com ng-if="results.length == 0" se existir (para não mostrar mensagem vazia)
+                    formHTML = formHTML.replace(/<tbody[^>]*ng-if\s*=\s*["']results\.length\s*==\s*0["'][^>]*>[\s\S]*?<\/tbody>/g, '');
+                    
+                    // Substituir o conteúdo do tbody
+                    const newTbodyContent = newRowsHTML;
+                    formHTML = formHTML.substring(0, tbodyStartIndex + tbodyStartTag.length) + 
+                               newTbodyContent + 
+                               formHTML.substring(tbodyEndIndex);
+                    
+                    // Remover COMPLETAMENTE o ng-repeat-start original do HTML para evitar que o AngularJS tente processá-lo novamente
+                    // Remover toda a estrutura ng-repeat-start/end que ainda possa existir
+                    formHTML = formHTML.replace(/<tr[^>]*ng-repeat-start\s*=\s*["']pagamento\s+in\s+resultadosFiltrados[^>]*>[\s\S]*?<\/tr>\s*<tr[^>]*ng-repeat-end[^>]*>[\s\S]*?<\/tr>/g, '');
+                    formHTML = formHTML.replace(/<tr[^>]*ng-repeat-start[^>]*>[\s\S]*?<\/tr>\s*<tr[^>]*ng-repeat-end[^>]*>[\s\S]*?<\/tr>/g, '');
+                    // Remover também qualquer referência isolada
+                    formHTML = formHTML.replace(/\s+ng-repeat-start\s*=\s*["'][^"']*["']/g, '');
+                    formHTML = formHTML.replace(/\s+ng-repeat-end/g, '');
+                    
+                    console.log(`   ✅ ${additionalData.pagamentos.length} linhas de pagamento criadas`);
+                    console.log(`   📊 Total de caracteres nas linhas: ${newRowsHTML.length}`);
+                } else {
+                    console.log('   ⚠️ Template ng-repeat-start/end não encontrado no formato esperado');
+                    console.log(`   📋 Primeiros 500 caracteres do tbody: ${tbodyContent.substring(0, 500)}`);
+                }
+            }
+        }
+    }
+    
+    // Processar ng-repeat normal para outras tabelas
     if (additionalData.records && additionalData.records.length > 0 && formHTML.includes('ng-repeat="record in records"')) {
         console.log('🔄 Pré-processando HTML para criar linhas da tabela...');
         
@@ -585,19 +765,334 @@ async function generateFormImage(config, databaseRecord = null) {
     const tempHTMLPath = join(projectRoot, "temp-form.html");
     writeFileSync(tempHTMLPath, initialHTML, 'utf-8');
     console.log(`✅ HTML temporário criado: ${tempHTMLPath}`);
+    console.log(`📊 Tamanho do HTML: ${initialHTML.length} caracteres`);
+    console.log(`📊 HTML contém card-group: ${initialHTML.includes('card-group')}`);
+    console.log(`📊 HTML contém tbody: ${initialHTML.includes('<tbody')}`);
+    console.log(`📊 HTML contém ng-controller: ${initialHTML.includes('ng-controller')}`);
     
     // Carregar HTML
     const fileUrl = `file://${tempHTMLPath}`;
     console.log(`📖 Carregando HTML: ${fileUrl}`);
-    await page.goto(fileUrl, { waitUntil: 'networkidle0' });
+    await page.goto(fileUrl, { waitUntil: 'networkidle0', timeout: 30000 });
+    
+    // Verificar erros do console
+    page.on('console', msg => {
+        const type = msg.type();
+        const text = msg.text();
+        if (type === 'error') {
+            console.error(`   🚨 Erro no console: ${text}`);
+        } else if (text.includes('Error') || text.includes('error')) {
+            console.warn(`   ⚠️  Aviso no console: ${text}`);
+        }
+    });
+    
+    page.on('pageerror', error => {
+        console.error(`   🚨 Erro na página: ${error.message}`);
+    });
+    
+    // Verificar se o conteúdo foi carregado
+    const pageContent = await page.evaluate(() => {
+        return {
+            bodyHTML: document.body ? document.body.innerHTML.substring(0, 500) : 'NO BODY',
+            hasCardGroup: !!document.querySelector('.card-group'),
+            hasTbody: !!document.querySelector('tbody'),
+            hasController: !!document.querySelector('[ng-controller]'),
+            bodyText: document.body ? document.body.textContent.substring(0, 200) : 'NO BODY',
+            bodyLength: document.body ? document.body.innerHTML.length : 0,
+            angularExists: typeof angular !== 'undefined',
+            readyState: document.readyState
+        };
+    });
+    console.log(`📊 Conteúdo da página após carregamento:`);
+    console.log(`   - Body HTML length: ${pageContent.bodyLength}`);
+    console.log(`   - Body HTML (primeiros 500 chars): ${pageContent.bodyHTML.substring(0, 200)}...`);
+    console.log(`   - Tem card-group: ${pageContent.hasCardGroup}`);
+    console.log(`   - Tem tbody: ${pageContent.hasTbody}`);
+    console.log(`   - Tem ng-controller: ${pageContent.hasController}`);
+    console.log(`   - AngularJS existe: ${pageContent.angularExists}`);
+    console.log(`   - Ready state: ${pageContent.readyState}`);
+    console.log(`   - Body text (primeiros 200 chars): ${pageContent.bodyText}`);
+    
+    if (pageContent.bodyLength === 0) {
+        console.error('   🚨 ERRO: Body está vazio! Verificando se o HTML foi carregado...');
+        const htmlContent = await page.content();
+        console.log(`   📊 HTML completo length: ${htmlContent.length}`);
+        console.log(`   📊 HTML contém body: ${htmlContent.includes('<body')}`);
+        console.log(`   📊 HTML contém card-group: ${htmlContent.includes('card-group')}`);
+    }
     
     // additionalData já foi carregado acima
+    
+    // Para aba de pagamentos, garantir que as linhas criadas manualmente não sejam removidas pelo AngularJS
+    if (additionalData.pagamentos && additionalData.pagamentos.length > 0) {
+        await page.evaluate(() => {
+            // Remover qualquer ng-repeat-start/end que ainda esteja no HTML para evitar que o AngularJS tente processá-lo
+            const body = document.body;
+            const allElements = body.querySelectorAll('*');
+            allElements.forEach(el => {
+                if (el.hasAttribute('ng-repeat-start')) {
+                    el.removeAttribute('ng-repeat-start');
+                }
+                if (el.hasAttribute('ng-repeat-end')) {
+                    el.removeAttribute('ng-repeat-end');
+                }
+            });
+            
+            // Garantir que as linhas da tabela estejam visíveis
+            const tbody = body.querySelector('tbody');
+            if (tbody) {
+                const rows = tbody.querySelectorAll('tr');
+                rows.forEach(row => {
+                    row.style.display = 'table-row';
+                    row.style.visibility = 'visible';
+                    row.style.opacity = '1';
+                });
+                console.log(`✅ ${rows.length} linhas da tabela garantidas como visíveis`);
+            }
+        });
+    }
     
     // Processar templates AngularJS se necessário
     if (hasAngularTemplates && includeAngular) {
         await processAngularTemplates(page, additionalData);
         // Aguardar um pouco mais para garantir renderização completa
         await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Para aba de pagamentos, garantir que os cards sejam visíveis
+        if (additionalData.pagamentos && additionalData.pagamentos.length > 0) {
+            await page.evaluate(() => {
+                // Remover ng-if que pode estar ocultando os cards
+                const ngIfElements = document.querySelectorAll('[ng-if="!isCalculating"]');
+                ngIfElements.forEach(el => {
+                    el.style.display = 'block';
+                    el.style.visibility = 'visible';
+                    el.style.opacity = '1';
+                });
+                
+                // Garantir que o card-group esteja visível
+                const cardGroup = document.querySelector('.card-group');
+                if (cardGroup) {
+                    cardGroup.style.display = 'flex';
+                    cardGroup.style.visibility = 'visible';
+                    cardGroup.style.opacity = '1';
+                    
+                    const cards = cardGroup.querySelectorAll('.card');
+                    cards.forEach(card => {
+                        card.style.display = 'block';
+                        card.style.visibility = 'visible';
+                        card.style.opacity = '1';
+                    });
+                }
+            });
+        }
+        
+        // Para aba de pagamentos, garantir que as linhas criadas manualmente sejam preservadas
+        if (additionalData.pagamentos && additionalData.pagamentos.length > 0) {
+            await page.evaluate((pagamentos) => {
+                const body = document.body;
+                const tbody = body.querySelector('tbody');
+                
+                if (tbody) {
+                    const rows = tbody.querySelectorAll('tr');
+                    console.log(`📊 Linhas encontradas após processamento AngularJS: ${rows.length}`);
+                    
+                    // Se não há linhas mas há dados, recriar as linhas
+                    if (rows.length === 0 && pagamentos && pagamentos.length > 0) {
+                        console.log('⚠️ Nenhuma linha encontrada, mas há dados. Verificando se o tbody está vazio...');
+                        
+                        // Verificar se o tbody tem conteúdo
+                        const tbodyContent = tbody.innerHTML.trim();
+                        if (tbodyContent.length === 0 || tbodyContent.includes('ng-repeat')) {
+                            console.log('⚠️ Tbody está vazio ou ainda tem ng-repeat. As linhas foram removidas pelo AngularJS.');
+                            console.log(`   Tentando recriar ${pagamentos.length} linhas manualmente...`);
+                            
+                            // Recriar TODAS as linhas para visualização
+                            pagamentos.forEach((pagamento, index) => {
+                                if (index >= 5) return; // Limitar a 5 linhas para a imagem
+                                
+                                const headerRow = document.createElement('tr');
+                                headerRow.innerHTML = `
+                                    <td colspan="6" style="text-align: left;height: 20px; background-color: #e7e7e7;color: #666666;font-weight: bold;padding-right: 10px;">
+                                        <div class="pull-left p-t-xs">
+                                            ${pagamento.nomeProdutor || 'PRODUTOR'}&nbsp;
+                                            <span class="label label-default"><i class="fa fa-user"></i> ${pagamento.produtor || ''}</span>
+                                            ${pagamento.fazenda ? `<span class="label label-default"><i class="fa fa-home"></i> ${pagamento.fazenda}</span>` : ''}
+                                            <span class="label label-primary">${pagamento.modelo || ''}&nbsp;</span>
+                                            <span class="label label-info"><i class="fa fa-tint"></i> R$ ${(pagamento.preco_medio || 0).toFixed(3)}&nbsp;</span>
+                                        </div>
+                                    </td>
+                                `;
+                                
+                                const dataRow = document.createElement('tr');
+                                const totalDeducao = pagamento.total_deducao || pagamento.total_impostodeducao || 0;
+                                dataRow.innerHTML = `
+                                    <td>
+                                        <button class="btn btn-sm btn-default" style="width: 100%; font-size: 14px; text-align: center">
+                                            <span><i class="fa fa-tint"></i> ${(pagamento.volume || 0).toLocaleString('pt-BR')} L</span>
+                                        </button>
+                                    </td>
+                                    <td style="text-align: right;">
+                                        <button class="btn btn-sm btn-info" style="width: 100%; font-size: 14px; text-align: center">
+                                            <i class="fas fa-coins"></i> ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(pagamento.total_fornecimento || 0)}
+                                        </button>
+                                    </td>
+                                    <td style="text-align: right;">
+                                        <button class="btn btn-sm btn-default" style="width: 100%; font-size: 14px; text-align: center">
+                                            <span style="color: #0d47a1;"><i class="fa fa-plus-circle"></i> ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(pagamento.total_credito || 0)}</span>
+                                        </button>
+                                    </td>
+                                    <td style="text-align: right;">
+                                        <button class="btn btn-sm btn-default" style="width: 100%;font-size: 14px; text-align: center">
+                                            <span style="color: #ac2925;"> <i class="fa fa-minus-circle"></i> ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalDeducao)}</span>
+                                        </button>
+                                    </td>
+                                    <td style="text-align: right;width: 100px;">
+                                        <button class="btn btn-sm ${(pagamento.total_pagamento || 0) >= 0 ? 'btn-success' : 'btn-danger'}" style="font-size: 14px;width: 100%;text-align: center;">
+                                            <i class="fa fa-${(pagamento.total_pagamento || 0) >= 0 ? 'plus' : 'minus'}-circle"></i> &nbsp;${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(pagamento.total_pagamento || 0)}
+                                        </button>
+                                    </td>
+                                    <td style="padding: 0px 0px 0px 0px;">
+                                        <div class="row" style="margin-left: 0px;margin-right: 0px;">
+                                            <div class="col-sm-6" style="padding: 0px;">
+                                                <button class="md-icon-button" style="border: none; background: none; cursor: pointer;">
+                                                    <span class="material-icons action-icon" style="font-family: Material Icons; cursor: pointer; color: #666; display: inline-block; margin: 0 4px; font-size: 24px;">calculate</span>
+                                                </button>
+                                            </div>
+                                            <div class="col-sm-6" style="padding: 0px;">
+                                                <button class="md-icon-button" style="border: none; background: none; cursor: pointer;">
+                                                    <span class="material-icons action-icon" style="font-family: Material Icons; cursor: pointer; color: #666; display: inline-block; margin: 0 4px; font-size: 24px;">print</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </td>
+                                `;
+                                
+                                tbody.appendChild(headerRow);
+                                tbody.appendChild(dataRow);
+                            });
+                            
+                            console.log(`✅ ${Math.min(pagamentos.length, 5)} linhas recriadas manualmente`);
+                        }
+                        
+                        // Garantir que os cards de estatísticas sejam renderizados
+                        const cardGroup = body.querySelector('.card-group');
+                        if (cardGroup) {
+                            const cards = cardGroup.querySelectorAll('.card .fs-widget-number-22');
+                            console.log(`📊 Cards encontrados: ${cards.length}`);
+                            
+                            // Se não há cards ou estão vazios, criar manualmente
+                            if (cards.length === 0 || Array.from(cards).every(card => !card.textContent.trim() || card.textContent.includes('{{'))) {
+                                console.log('⚠️ Cards não renderizados, criando manualmente...');
+                                
+                                const estatisticas = pagamentos.reduce((acc, p) => {
+                                    acc.totalDemonstrativos = (acc.totalDemonstrativos || 0) + 1;
+                                    acc.volumeCaptado = (acc.volumeCaptado || 0) + (p.volume || 0);
+                                    acc.totalBruto = (acc.totalBruto || 0) + (parseFloat(p.total_fornecimento) || 0);
+                                    acc.totalLiquido = (acc.totalLiquido || 0) + (parseFloat(p.total_pagamento) || 0);
+                                    return acc;
+                                }, { totalDemonstrativos: 0, volumeCaptado: 0, totalBruto: 0, totalLiquido: 0 });
+                                
+                                estatisticas.precoMedio = estatisticas.volumeCaptado > 0 ? (estatisticas.totalBruto / estatisticas.volumeCaptado).toFixed(3) : '0.000';
+                                
+                                // Criar ou atualizar cards
+                                const cardNumbers = cardGroup.querySelectorAll('.fs-widget-number-22');
+                                if (cardNumbers.length >= 5) {
+                                    cardNumbers[0].textContent = estatisticas.totalDemonstrativos;
+                                    cardNumbers[1].textContent = estatisticas.volumeCaptado.toLocaleString('pt-BR') + ' L';
+                                    cardNumbers[2].textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(estatisticas.totalBruto);
+                                    cardNumbers[3].textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(estatisticas.totalLiquido);
+                                    cardNumbers[4].textContent = estatisticas.precoMedio;
+                                    console.log('✅ Cards atualizados manualmente');
+                                }
+                            }
+                        }
+                    } else if (rows.length > 0) {
+                        // Se há linhas mas são poucas, criar mais linhas se necessário
+                        if (rows.length < pagamentos.length && pagamentos.length > 0) {
+                            console.log(`⚠️ Apenas ${rows.length} linhas encontradas, mas há ${pagamentos.length} pagamentos. Criando linhas adicionais...`);
+                            
+                            // Criar linhas adicionais a partir do índice atual
+                            for (let i = rows.length / 2; i < Math.min(pagamentos.length, 5); i++) {
+                                const pagamento = pagamentos[i];
+                                if (!pagamento) continue;
+                                
+                                const headerRow = document.createElement('tr');
+                                headerRow.innerHTML = `
+                                    <td colspan="6" style="text-align: left;height: 20px; background-color: #e7e7e7;color: #666666;font-weight: bold;padding-right: 10px;">
+                                        <div class="pull-left p-t-xs">
+                                            ${pagamento.nomeProdutor || 'PRODUTOR'}&nbsp;
+                                            <span class="label label-default"><i class="fa fa-user"></i> ${pagamento.produtor || ''}</span>
+                                            ${pagamento.fazenda ? `<span class="label label-default"><i class="fa fa-home"></i> ${pagamento.fazenda}</span>` : ''}
+                                            <span class="label label-primary">${pagamento.modelo || ''}&nbsp;</span>
+                                            <span class="label label-info"><i class="fa fa-tint"></i> R$ ${(pagamento.preco_medio || 0).toFixed(3)}&nbsp;</span>
+                                        </div>
+                                    </td>
+                                `;
+                                
+                                const dataRow = document.createElement('tr');
+                                const totalDeducao = pagamento.total_deducao || pagamento.total_impostodeducao || 0;
+                                dataRow.innerHTML = `
+                                    <td>
+                                        <button class="btn btn-sm btn-default" style="width: 100%; font-size: 14px; text-align: center">
+                                            <span><i class="fa fa-tint"></i> ${(pagamento.volume || 0).toLocaleString('pt-BR')} L</span>
+                                        </button>
+                                    </td>
+                                    <td style="text-align: right;">
+                                        <button class="btn btn-sm btn-info" style="width: 100%; font-size: 14px; text-align: center">
+                                            <i class="fas fa-coins"></i> ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(pagamento.total_fornecimento || 0)}
+                                        </button>
+                                    </td>
+                                    <td style="text-align: right;">
+                                        <button class="btn btn-sm btn-default" style="width: 100%; font-size: 14px; text-align: center">
+                                            <span style="color: #0d47a1;"><i class="fa fa-plus-circle"></i> ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(pagamento.total_credito || 0)}</span>
+                                        </button>
+                                    </td>
+                                    <td style="text-align: right;">
+                                        <button class="btn btn-sm btn-default" style="width: 100%;font-size: 14px; text-align: center">
+                                            <span style="color: #ac2925;"> <i class="fa fa-minus-circle"></i> ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalDeducao)}</span>
+                                        </button>
+                                    </td>
+                                    <td style="text-align: right;width: 100px;">
+                                        <button class="btn btn-sm ${(pagamento.total_pagamento || 0) >= 0 ? 'btn-success' : 'btn-danger'}" style="font-size: 14px;width: 100%;text-align: center;">
+                                            <i class="fa fa-${(pagamento.total_pagamento || 0) >= 0 ? 'plus' : 'minus'}-circle"></i> &nbsp;${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(pagamento.total_pagamento || 0)}
+                                        </button>
+                                    </td>
+                                    <td style="padding: 0px 0px 0px 0px;">
+                                        <div class="row" style="margin-left: 0px;margin-right: 0px;">
+                                            <div class="col-sm-6" style="padding: 0px;">
+                                                <button class="md-icon-button" style="border: none; background: none; cursor: pointer;">
+                                                    <span class="material-icons action-icon" style="font-family: Material Icons; cursor: pointer; color: #666; display: inline-block; margin: 0 4px; font-size: 24px;">calculate</span>
+                                                </button>
+                                            </div>
+                                            <div class="col-sm-6" style="padding: 0px;">
+                                                <button class="md-icon-button" style="border: none; background: none; cursor: pointer;">
+                                                    <span class="material-icons action-icon" style="font-family: Material Icons; cursor: pointer; color: #666; display: inline-block; margin: 0 4px; font-size: 24px;">print</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </td>
+                                `;
+                                
+                                tbody.appendChild(headerRow);
+                                tbody.appendChild(dataRow);
+                            }
+                            
+                            console.log(`✅ Linhas adicionais criadas`);
+                        }
+                    } else {
+                        // Garantir que as linhas existentes estejam visíveis
+                        rows.forEach(row => {
+                            row.style.display = 'table-row';
+                            row.style.visibility = 'visible';
+                            row.style.opacity = '1';
+                        });
+                        console.log(`✅ ${rows.length} linhas garantidas como visíveis`);
+                    }
+                } else {
+                    console.log('⚠️ Tbody não encontrado');
+                }
+            }, additionalData.pagamentos);
+        }
         
         // Verificar se as interpolações foram resolvidas
         const interpolationCheck = await page.evaluate(() => {
@@ -674,6 +1169,61 @@ async function generateFormImage(config, databaseRecord = null) {
                     const $rootScope = injector.get('$rootScope');
                     const $compile = injector.get('$compile');
                     
+                    // Processar aba de pagamentos
+                    if (additionalData && additionalData.pagamentos && Array.isArray(additionalData.pagamentos)) {
+                        const pagamentoElements = document.querySelectorAll('[ng-controller="folha.pagamento.ListCtrl"]');
+                        pagamentoElements.forEach(element => {
+                            try {
+                                const scope = angular.element(element).scope();
+                                if (scope) {
+                                    // Aplicar dados
+                                    if (additionalData.record) {
+                                        scope.record = JSON.parse(JSON.stringify(additionalData.record));
+                                    }
+                                    if (additionalData.estatisticasFolha) {
+                                        scope.estatisticasFolha = JSON.parse(JSON.stringify(additionalData.estatisticasFolha));
+                                    }
+                                    if (additionalData.pagamentos) {
+                                        scope.pagamentos = JSON.parse(JSON.stringify(additionalData.pagamentos));
+                                        scope.resultadosFiltrados = JSON.parse(JSON.stringify(additionalData.pagamentos));
+                                    }
+                                    
+                                    // Inicializar filtros
+                                    if (!scope.filter) {
+                                        scope.filter = { produtor: '' };
+                                    }
+                                    if (!scope.opcaoFiltro) {
+                                        scope.opcaoFiltro = 'todosOsCampos';
+                                    }
+                                    
+                                    // Garantir que viewState está definido
+                                    if (!scope.viewState) {
+                                        scope.viewState = 'edit';
+                                    }
+                                    if (scope.isCalculating === undefined) {
+                                        scope.isCalculating = false;
+                                    }
+                                    
+                                    // Force re-compilation
+                                    if ($compile) {
+                                        const compiled = $compile(element)(scope);
+                                    }
+                                    
+                                    if (!scope.$$phase && !scope.$root.$$phase) {
+                                        scope.$apply();
+                                    }
+                                    
+                                    console.log('✅ Dados aplicados ao folha.pagamento.ListCtrl');
+                                    console.log('   Pagamentos:', scope.pagamentos ? scope.pagamentos.length : 0);
+                                    console.log('   Estatísticas:', scope.estatisticasFolha);
+                                }
+                            } catch (e) {
+                                console.warn('Erro ao aplicar dados de pagamento:', e.message);
+                            }
+                        });
+                    }
+                    
+                    // Processar faixas (mantido para compatibilidade)
                     if (additionalData && additionalData.faixas) {
                         const faixaElements = document.querySelectorAll('[ng-controller="imposto.FaixaCtrl"]');
                         faixaElements.forEach(element => {
@@ -699,16 +1249,137 @@ async function generateFormImage(config, databaseRecord = null) {
                                 console.warn('Erro:', e.message);
                             }
                         });
+                    }
                         
                         if ($rootScope) {
                             $rootScope.$apply();
-                        }
                     }
                 }
             }, additionalData);
             
             // Wait for rendering
             await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Verificação específica para aba de pagamentos
+            if (additionalData && additionalData.pagamentos && Array.isArray(additionalData.pagamentos)) {
+                const pagamentoCheck = await page.evaluate(() => {
+                    const body = document.body;
+                    const injector = angular.element(body).injector();
+                    if (!injector) return { success: false, reason: 'No injector' };
+                    
+                    const pagamentoElements = document.querySelectorAll('[ng-controller="folha.pagamento.ListCtrl"]');
+                    const results = [];
+                    
+                    pagamentoElements.forEach(element => {
+                        try {
+                            const scope = angular.element(element).scope();
+                            if (scope) {
+                                const hasRecord = scope.record && scope.record.referencia;
+                                const hasEstatisticas = scope.estatisticasFolha && scope.estatisticasFolha.totalDemonstrativos !== undefined;
+                                const hasPagamentos = scope.pagamentos && scope.pagamentos.length > 0;
+                                const hasResultadosFiltrados = scope.resultadosFiltrados && scope.resultadosFiltrados.length > 0;
+                                
+                                results.push({
+                                    hasRecord,
+                                    hasEstatisticas,
+                                    hasPagamentos,
+                                    hasResultadosFiltrados,
+                                    pagamentosCount: scope.pagamentos ? scope.pagamentos.length : 0,
+                                    resultadosCount: scope.resultadosFiltrados ? scope.resultadosFiltrados.length : 0
+                                });
+                            }
+                        } catch (e) {
+                            results.push({ error: e.message });
+                        }
+                    });
+                    
+                    // Verificar se cards de estatísticas estão visíveis
+                    const cards = document.querySelectorAll('.card-group .card');
+                    const cardsWithData = Array.from(cards).filter(card => {
+                        const number = card.querySelector('.fs-widget-number-22');
+                        return number && number.textContent.trim() && !number.textContent.includes('{{');
+                    });
+                    
+                    // Verificar se tabela tem linhas
+                    const tableRows = document.querySelectorAll('tbody tr');
+                    const hasTableRows = tableRows.length > 0;
+                    
+                    // Verificar se há interpolações não resolvidas
+                    const textContent = document.body.textContent || '';
+                    const hasUnresolved = textContent.includes('{{estatisticasFolha.') || 
+                                         textContent.includes('{{pagamento.') ||
+                                         textContent.includes('{{record.');
+                    
+                    return {
+                        success: results.length > 0 && results.every(r => r.hasRecord && r.hasEstatisticas && r.hasPagamentos),
+                        hasUnresolved,
+                        cardsCount: cards.length,
+                        cardsWithDataCount: cardsWithData.length,
+                        hasTableRows,
+                        tableRowsCount: tableRows.length,
+                        results
+                    };
+                });
+                
+                if (!pagamentoCheck.success || pagamentoCheck.hasUnresolved) {
+                    console.log('⚠️  Dados de pagamento não renderizados corretamente, aplicando novamente...');
+                    console.log('   Cards:', pagamentoCheck.cardsCount, 'com dados:', pagamentoCheck.cardsWithDataCount);
+                    console.log('   Linhas da tabela:', pagamentoCheck.tableRowsCount);
+                    
+                    // Aplicar dados novamente
+                    await page.evaluate((additionalData) => {
+                        const body = document.body;
+                        const injector = angular.element(body).injector();
+                        if (injector) {
+                            const pagamentoElements = document.querySelectorAll('[ng-controller="folha.pagamento.ListCtrl"]');
+                            pagamentoElements.forEach(element => {
+                                try {
+                                    const scope = angular.element(element).scope();
+                                    if (scope) {
+                                        if (additionalData.record) {
+                                            scope.record = JSON.parse(JSON.stringify(additionalData.record));
+                                        }
+                                        if (additionalData.estatisticasFolha) {
+                                            scope.estatisticasFolha = JSON.parse(JSON.stringify(additionalData.estatisticasFolha));
+                                        }
+                                        if (additionalData.pagamentos) {
+                                            scope.pagamentos = JSON.parse(JSON.stringify(additionalData.pagamentos));
+                                            scope.resultadosFiltrados = JSON.parse(JSON.stringify(additionalData.pagamentos));
+                                        }
+                                        
+                                        // Garantir que isCalculating seja false
+                                        scope.isCalculating = false;
+                                        scope.isExportingDemonstrativos = false;
+                                        scope.isEmitindoNfe = false;
+                                        
+                                        if (!scope.$$phase && !scope.$root.$$phase) {
+                                            scope.$apply();
+                                        }
+                                        
+                                        // Garantir que os cards sejam visíveis
+                                        setTimeout(() => {
+                                            const cardGroup = document.querySelector('.card-group');
+                                            if (cardGroup) {
+                                                cardGroup.style.display = 'flex';
+                                                cardGroup.style.visibility = 'visible';
+                                                cardGroup.style.opacity = '1';
+                                            }
+                                        }, 100);
+                                    }
+                                } catch (e) {
+                                    console.warn('Erro:', e.message);
+                                }
+                            });
+                        }
+                    }, additionalData);
+                    
+            await new Promise(resolve => setTimeout(resolve, 1000));
+                } else {
+                    console.log('✅ Dados de pagamento renderizados corretamente');
+                    console.log(`   Cards: ${pagamentoCheck.cardsWithDataCount}/${pagamentoCheck.cardsCount}`);
+                    console.log(`   Linhas da tabela: ${pagamentoCheck.tableRowsCount}`);
+                }
+            }
         } else {
             console.log('✅ Interpolações resolvidas corretamente');
         }
@@ -847,32 +1518,59 @@ async function generateFormImage(config, databaseRecord = null) {
                 let el = null;
                 let debugMsg = '';
                 
+                // Para cards, garantir que os elementos sejam encontrados
+                if (element.selector.includes('.card-group') || element.selector.includes('.fs-widget-number-22')) {
+                    debugMsg = `Badge ${element.number}: selector="${element.selector}"`;
+                    el = document.querySelector(element.selector);
+                    if (!el) {
+                        // Tentar encontrar de forma alternativa
+                        const cardGroup = document.querySelector('.card-group');
+                        if (cardGroup) {
+                            const cards = cardGroup.querySelectorAll('.card');
+                            if (element.number === 2 && cards[0]) {
+                                el = cards[0].querySelector('.fs-widget-number-22');
+                            } else if (element.number === 3 && cards[1]) {
+                                el = cards[1].querySelector('.fs-widget-number-22');
+                            } else if (element.number === 4 && cards[2]) {
+                                el = cards[2].querySelector('.fs-widget-number-22');
+                            } else if (element.number === 5 && cards[3]) {
+                                el = cards[3].querySelector('.fs-widget-number-22');
+                            } else if (element.number === 6 && cards[4]) {
+                                el = cards[4].querySelector('.fs-widget-number-22');
+                            }
+                        }
+                    }
+                    if (el) {
+                        debugMsg += ` | ✅ Encontrado: "${el.textContent.substring(0, 20)}"`;
+                    } else {
+                        debugMsg += ` | ✗ Não encontrado`;
+                    }
+                }
                 // Para action-icon, sempre usar abordagem direta (não confiar em :first-of-type, etc)
-                if (element.selector.includes('action-icon')) {
+                else if (element.selector.includes('action-icon')) {
                     debugMsg = `Badge ${element.number}: selector="${element.selector}"`;
                     
-                    // Encontrar a primeira linha da tabela
-                    const firstRow = document.querySelector('tbody tr:first-child');
-                    if (firstRow) {
-                        // Tentar encontrar na última célula (para folha) ou em td.action (para tabelapreco)
-                        const lastCell = firstRow.querySelector('td:last-child');
-                        const actionCell = firstRow.querySelector('td.action');
-                        const targetCell = lastCell || actionCell;
-                        
-                        if (targetCell) {
-                            const iconDiv = targetCell.querySelector('div');
+                    // Encontrar a segunda linha da tabela (primeira linha de dados, não header)
+                    const secondRow = document.querySelector('tbody tr:nth-child(2)');
+                    if (secondRow) {
+                        // Tentar encontrar na última célula
+                        const lastCell = secondRow.querySelector('td:last-child');
+                        if (lastCell) {
+                            const iconDiv = lastCell.querySelector('div');
                             if (iconDiv) {
                                 const allIcons = Array.from(iconDiv.querySelectorAll('.action-icon, span.material-icons, md-icon'));
                                 debugMsg += ` | Encontrados ${allIcons.length} ícones`;
                                 
                                 // Determinar qual ícone usar baseado no número do badge
-                                if (element.selector.includes('first-of-type') || element.number === 5 || element.number === 9) {
+                                // Badge 14 = primeiro ícone (recalcular pagamento)
+                                // Badge 15 = segundo ícone (imprimir)
+                                if (element.selector.includes('first-of-type') || element.number === 14) {
                                     el = allIcons[0] || null;
                                     debugMsg += ` | Primeiro: ${el ? `"${el.textContent.trim()}"` : 'não encontrado'}`;
-                                } else if (element.selector.includes('nth-of-type(2)') || element.number === 6 || element.number === 10) {
+                                } else if (element.selector.includes('nth-of-type(2)') || element.number === 15) {
                                     el = allIcons[1] || null;
                                     debugMsg += ` | Segundo: ${el ? `"${el.textContent.trim()}"` : 'não encontrado'}`;
-                                } else if (element.selector.includes('last-of-type') || element.number === 7 || element.number === 11) {
+                                } else if (element.selector.includes('last-of-type')) {
                                     el = allIcons[allIcons.length - 1] || null;
                                     debugMsg += ` | Último: ${el ? `"${el.textContent.trim()}"` : 'não encontrado'}`;
                                 }
@@ -880,10 +1578,32 @@ async function generateFormImage(config, databaseRecord = null) {
                                 debugMsg += ` | ⚠️ Div de ícones não encontrada`;
                             }
                         } else {
-                            debugMsg += ` | ⚠️ Célula não encontrada`;
+                            debugMsg += ` | ⚠️ Última célula não encontrada`;
                         }
                     } else {
-                        debugMsg += ` | ⚠️ Primeira linha não encontrada`;
+                        debugMsg += ` | ⚠️ Segunda linha não encontrada`;
+                    }
+                }
+                // Para dropdown menu (recalcular folha)
+                else if (element.selector.includes('dropdown-menu') || element.selector.includes('recalculaPagamentos')) {
+                    debugMsg = `Badge ${element.number}: selector="${element.selector}"`;
+                    el = document.querySelector(element.selector);
+                    if (!el) {
+                        // Tentar encontrar o link de recalcular folha
+                        const dropdown = document.querySelector('ul.dropdown-menu');
+                        if (dropdown) {
+                            const links = dropdown.querySelectorAll('a');
+                            links.forEach(link => {
+                                if (link.getAttribute('ng-click') === 'recalculaPagamentos()') {
+                                    el = link;
+                                }
+                            });
+                        }
+                    }
+                    if (el) {
+                        debugMsg += ` | ✅ Encontrado: "${el.textContent.trim()}"`;
+                    } else {
+                        debugMsg += ` | ✗ Não encontrado`;
                     }
                 } else {
                     // Para outros elementos, usar o seletor original
@@ -909,9 +1629,39 @@ async function generateFormImage(config, databaseRecord = null) {
                     const isCheckbox = tagName === 'input' && el.type === 'checkbox';
                     const isInput = tagName === 'input' || tagName === 'select' || tagName === 'textarea';
                     const isActionIcon = el.classList.contains('action-icon') || el.classList.contains('material-icons');
+                    const isCardNumber = el.classList.contains('fs-widget-number-22');
                     
+                    // Para cards (fs-widget-number-22), usar o card como container
+                    if (isCardNumber) {
+                        const card = el.closest('.card');
+                        if (card) {
+                            container = card;
+                            // Garantir que o card tenha position relative
+                            card.style.position = 'relative';
+                            card.style.overflow = 'visible';
+                            card.style.zIndex = '1';
+                            
+                            // Garantir que o card-body também tenha overflow visible
+                            const cardBody = card.querySelector('.card-body');
+                            if (cardBody) {
+                                cardBody.style.position = 'relative';
+                                cardBody.style.overflow = 'visible';
+                            }
+                            
+                            // Garantir que o card-group tenha overflow visible
+                            const cardGroup = card.closest('.card-group');
+                            if (cardGroup) {
+                                cardGroup.style.overflow = 'visible';
+                                cardGroup.style.position = 'relative';
+                            }
+                            
+                            // Garantir que o número tenha position relative
+                            el.style.position = 'relative';
+                            el.style.overflow = 'visible';
+                        }
+                    }
                     // Para action-icon, usar o próprio elemento como container (não o td.action)
-                    if (isActionIcon) {
+                    else if (isActionIcon) {
                         container = el;
                         // Garantir que o ícone tenha position relative para o badge aparecer
                         // SEMPRE aplicar, mesmo se já tiver position relative
@@ -981,6 +1731,13 @@ async function generateFormImage(config, databaseRecord = null) {
                     badge.className = 'element-number-badge';
                     badge.setAttribute('data-number', element.number);
                     badge.textContent = element.number;
+                    
+                    // Para badges em cards, ajustar posicionamento
+                    if (isCardNumber) {
+                        badge.style.top = element.position?.top || '-12px';
+                        badge.style.right = element.position?.right || '5px';
+                        badge.style.zIndex = '10001'; // Mais alto que outros badges
+                    }
                     
                     // Use custom position if provided, otherwise use smart defaults
                     const position = element.position || {};
@@ -1118,28 +1875,41 @@ async function generateFormImage(config, databaseRecord = null) {
         
         // Verificação final antes do screenshot
         if (hasAngularTemplates && includeAngular) {
-            const finalCheck = await page.evaluate(() => {
+            const finalCheck = await page.evaluate((additionalData) => {
                 const body = document.body;
                 const textContent = body.textContent || '';
                 const innerHTML = body.innerHTML || '';
                 
-                // Check for unresolved interpolations
+                // Check for unresolved interpolations (incluindo pagamento e estatisticasFolha)
                 const hasUnresolved = textContent.includes('{{record.') || textContent.includes('{{faixa.') || 
-                                     innerHTML.includes('{{record.') || innerHTML.includes('{{faixa.');
+                                     textContent.includes('{{pagamento.') || textContent.includes('{{estatisticasFolha.') ||
+                                     innerHTML.includes('{{record.') || innerHTML.includes('{{faixa.') ||
+                                     innerHTML.includes('{{pagamento.') || innerHTML.includes('{{estatisticasFolha.');
                 
                 // Check specific rendered content
                 const titleEl = document.querySelector('.h4');
                 const titleText = titleEl ? titleEl.textContent.trim() : '';
                 const titleHasData = titleText && titleText.length > 0 && !titleText.includes('{{');
                 
+                // Verificar cards de estatísticas (para aba de pagamentos)
+                const cards = document.querySelectorAll('.card-group .card .fs-widget-number-22');
+                const cardsWithData = Array.from(cards).filter(card => {
+                    const text = card.textContent.trim();
+                    return text && text.length > 0 && !text.includes('{{');
+                });
+                
+                // Verificar tabela
                 const tableRows = document.querySelectorAll('tbody tr');
                 const hasRows = tableRows.length > 0;
                 let rowHasData = false;
                 if (hasRows) {
                     const firstRow = tableRows[0];
                     const rowText = firstRow.textContent || '';
-                    rowHasData = rowText.length > 0 && !rowText.includes('{{') && !rowText.includes('Nenhuma faixa');
+                    rowHasData = rowText.length > 0 && !rowText.includes('{{') && !rowText.includes('Nenhuma faixa') && !rowText.includes('Ainda não foi realizado');
                 }
+                
+                // Verificar se é aba de pagamentos
+                const isPagamentoPage = body.querySelector('[ng-controller="folha.pagamento.ListCtrl"]') !== null;
                 
                 return {
                     hasUnresolved,
@@ -1147,11 +1917,420 @@ async function generateFormImage(config, databaseRecord = null) {
                     titleText: titleText.substring(0, 150),
                     hasRows,
                     rowHasData,
+                    rowCount: tableRows.length,
+                    isPagamentoPage,
+                    cardsCount: cards.length,
+                    cardsWithDataCount: cardsWithData.length
+                };
+            }, additionalData);
+            
+            // Verificação específica para aba de pagamentos
+            if (finalCheck.isPagamentoPage) {
+                console.log('📊 Verificação específica para aba de pagamentos:');
+                console.log(`   - Cards: ${finalCheck.cardsWithDataCount}/${finalCheck.cardsCount} com dados`);
+                console.log(`   - Linhas da tabela: ${finalCheck.rowCount}`);
+                
+                // Sempre garantir que os cards estejam visíveis e com dados
+                if (finalCheck.cardsWithDataCount < 5) {
+                    console.log('   ⚠️  Cards de estatísticas não renderizados completamente');
+                }
+                
+                // Garantir que os cards sejam renderizados visualmente
+                const cardsEnsured = await page.evaluate((estatisticas) => {
+                    // Remover ng-if que pode estar ocultando elementos
+                    const ngIfElements = document.querySelectorAll('[ng-if]');
+                    ngIfElements.forEach(el => {
+                        const ngIf = el.getAttribute('ng-if');
+                        // Se for !isCalculating, garantir que está visível
+                        if (ngIf === '!isCalculating' || ngIf.includes('!isCalculating')) {
+                            el.style.display = 'block';
+                            el.style.visibility = 'visible';
+                            el.style.opacity = '1';
+                            el.removeAttribute('ng-if');
+                        }
+                    });
+                    
+                    // Garantir que isCalculating seja false para mostrar os cards
+                    const panels = document.querySelectorAll('[ng-if="!isCalculating"]');
+                    panels.forEach(panel => {
+                        panel.style.display = 'block';
+                        panel.style.visibility = 'visible';
+                        panel.style.opacity = '1';
+                    });
+                    
+                    const cardGroup = document.querySelector('.card-group');
+                    if (cardGroup) {
+                        // Garantir que o card-group esteja visível
+                        cardGroup.style.display = 'flex';
+                        cardGroup.style.visibility = 'visible';
+                        cardGroup.style.opacity = '1';
+                        cardGroup.style.width = '100%';
+                        cardGroup.style.marginBottom = '20px';
+                        
+                        const cards = cardGroup.querySelectorAll('.card');
+                        console.log(`📊 Cards encontrados: ${cards.length}`);
+                        cards.forEach((card, index) => {
+                            card.style.display = 'block';
+                            card.style.visibility = 'visible';
+                            card.style.opacity = '1';
+                            card.style.flex = '1';
+                            card.style.margin = '0 10px';
+                            card.style.background = 'white';
+                            card.style.border = '1px solid #ddd';
+                            card.style.borderRadius = '4px';
+                            
+                            const cardBody = card.querySelector('.card-body');
+                            if (cardBody) {
+                                cardBody.style.display = 'block';
+                                cardBody.style.visibility = 'visible';
+                                cardBody.style.padding = '15px';
+                            }
+                            
+                            // Garantir que os ícones dos cards sejam visíveis
+                            const icons = card.querySelectorAll('i');
+                            icons.forEach(icon => {
+                                icon.style.display = 'inline-block';
+                                icon.style.visibility = 'visible';
+                            });
+                        });
+                        
+                        const cardNumbers = cardGroup.querySelectorAll('.fs-widget-number-22');
+                        console.log(`📊 Números de cards encontrados: ${cardNumbers.length}`);
+                        if (cardNumbers.length >= 5 && estatisticas) {
+                            // Atualizar valores com formatação correta
+                            cardNumbers[0].textContent = estatisticas.totalDemonstrativos || 0;
+                            cardNumbers[0].style.display = 'block';
+                            cardNumbers[0].style.visibility = 'visible';
+                            cardNumbers[0].style.fontSize = '22px';
+                            cardNumbers[0].style.fontWeight = 'bold';
+                            cardNumbers[0].style.color = '#333';
+                            
+                            cardNumbers[1].textContent = (estatisticas.volumeCaptado || 0).toLocaleString('pt-BR') + ' L';
+                            cardNumbers[1].style.display = 'block';
+                            cardNumbers[1].style.visibility = 'visible';
+                            cardNumbers[1].style.fontSize = '22px';
+                            cardNumbers[1].style.fontWeight = 'bold';
+                            cardNumbers[1].style.color = '#333';
+                            
+                            cardNumbers[2].textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(estatisticas.totalBruto || 0);
+                            cardNumbers[2].style.display = 'block';
+                            cardNumbers[2].style.visibility = 'visible';
+                            cardNumbers[2].style.fontSize = '22px';
+                            cardNumbers[2].style.fontWeight = 'bold';
+                            cardNumbers[2].style.color = '#333';
+                            
+                            cardNumbers[3].textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(estatisticas.totalLiquido || 0);
+                            cardNumbers[3].style.display = 'block';
+                            cardNumbers[3].style.visibility = 'visible';
+                            cardNumbers[3].style.fontSize = '22px';
+                            cardNumbers[3].style.fontWeight = 'bold';
+                            cardNumbers[3].style.color = '#333';
+                            
+                            cardNumbers[4].textContent = (estatisticas.precoMedio || 0).toFixed(3);
+                            cardNumbers[4].style.display = 'block';
+                            cardNumbers[4].style.visibility = 'visible';
+                            cardNumbers[4].style.fontSize = '22px';
+                            cardNumbers[4].style.fontWeight = 'bold';
+                            cardNumbers[4].style.color = '#333';
+                            
+                            console.log('✅ Cards atualizados e garantidos como visíveis');
+                            return true;
+                        } else {
+                            console.log(`⚠️ CardGroup ou cards não encontrados. Cards: ${cards.length}, Números: ${cardNumbers.length}`);
+                            return false;
+                        }
+                    } else {
+                        console.log('⚠️ CardGroup não encontrado no DOM');
+                        return false;
+                    }
+                }, additionalData.estatisticasFolha);
+                if (cardsEnsured) {
+                    console.log('   ✅ Cards garantidos como visíveis e atualizados');
+                }
+                if (finalCheck.rowCount === 0 && additionalData.pagamentos && additionalData.pagamentos.length > 0) {
+                    console.log('   ⚠️  Tabela de pagamentos vazia, mas há dados disponíveis');
+                    console.log(`   📊 Tentando criar ${Math.min(additionalData.pagamentos.length, 5)} linhas manualmente...`);
+                    // Criar linhas manualmente
+                    const rowsCreated = await page.evaluate((pagamentos) => {
+                        // Tentar encontrar tbody de várias formas
+                        let tbody = document.querySelector('tbody');
+                        if (!tbody) {
+                            tbody = document.querySelector('md-table-container tbody');
+                        }
+                        if (!tbody) {
+                            tbody = document.querySelector('.table-responsive tbody');
+                        }
+                        if (!tbody) {
+                            tbody = document.querySelector('table tbody');
+                        }
+                        if (!tbody) {
+                            // Tentar encontrar qualquer table e criar tbody se necessário
+                            let table = document.querySelector('table') || document.querySelector('md-table-container table') || document.querySelector('md-table-container');
+                            if (!table) {
+                                // Criar tabela completa se não existir
+                                const container = document.querySelector('md-table-container') || document.querySelector('.table-responsive') || document.body;
+                                table = document.createElement('table');
+                                table.className = 'table table-striped table-hover';
+                                let thead = table.querySelector('thead');
+                                if (!thead) {
+                                    thead = document.createElement('thead');
+                                    thead.innerHTML = `
+                                        <tr>
+                                            <th style="text-align: center;">FORNECIMENTO</th>
+                                            <th style="text-align: center;">VALOR BRUTO (R$)</th>
+                                            <th style="text-align: center;">CRÉDITOS (R$)</th>
+                                            <th style="text-align: center;">DEDUÇÕES (R$)</th>
+                                            <th style="text-align: center;">A RECEBER (R$)</th>
+                                            <th style="width: 90px;"></th>
+                                        </tr>
+                                    `;
+                                    table.appendChild(thead);
+                                    console.log('📊 Thead criado dinamicamente');
+                                }
+                                container.appendChild(table);
+                                console.log('📊 Tabela criada dinamicamente');
+                            }
+                            if (table) {
+                                tbody = table.querySelector('tbody');
+                                if (!tbody) {
+                                    tbody = document.createElement('tbody');
+                                    table.appendChild(tbody);
+                                    console.log('📊 Tbody criado dinamicamente');
+                                }
+                            }
+                        }
+                        
+                        console.log('📊 Tbody encontrado:', !!tbody);
+                        console.log('📊 Pagamentos disponíveis:', pagamentos ? pagamentos.length : 0);
+                        if (tbody) {
+                            console.log('📊 Tbody HTML antes:', tbody.innerHTML.substring(0, 200));
+                        }
+                        
+                        if (tbody && pagamentos && pagamentos.length > 0) {
+                            console.log(`📊 Criando ${Math.min(pagamentos.length, 5)} linhas...`);
+                            // Limpar tbody
+                            tbody.innerHTML = '';
+                            
+                            // Criar até 5 linhas
+                            for (let i = 0; i < Math.min(pagamentos.length, 5); i++) {
+                                console.log(`📊 Criando linha ${i + 1} para ${pagamentos[i].nomeProdutor || 'PRODUTOR'}`);
+                                const pagamento = pagamentos[i];
+                                const totalDeducao = pagamento.total_deducao || pagamento.total_impostodeducao || 0;
+                                
+                                // Linha de cabeçalho
+                                const headerRow = document.createElement('tr');
+                                headerRow.innerHTML = `
+                                    <td colspan="6" style="text-align: left;height: 20px; background-color: #e7e7e7;color: #666666;font-weight: bold;padding-right: 10px;">
+                                        <div class="pull-left p-t-xs">
+                                            ${pagamento.nomeProdutor || 'PRODUTOR'}&nbsp;
+                                            <span class="label label-default"><i class="fa fa-user"></i> ${pagamento.produtor || ''}</span>
+                                            ${pagamento.fazenda ? `<span class="label label-default"><i class="fa fa-home"></i> ${pagamento.fazenda}</span>` : ''}
+                                            <span class="label label-primary">${pagamento.modelo || ''}&nbsp;</span>
+                                            <span class="label label-info"><i class="fa fa-tint"></i> R$ ${(pagamento.preco_medio || 0).toFixed(3)}&nbsp;</span>
+                                        </div>
+                                    </td>
+                                `;
+                                
+                                // Linha de dados
+                                const dataRow = document.createElement('tr');
+                                dataRow.innerHTML = `
+                                    <td>
+                                        <button class="btn btn-sm btn-default" style="width: 100%; font-size: 14px; text-align: center">
+                                            <span><i class="fa fa-tint"></i> ${(pagamento.volume || 0).toLocaleString('pt-BR')} L</span>
+                                        </button>
+                                    </td>
+                                    <td style="text-align: right;">
+                                        <button class="btn btn-sm btn-info" style="width: 100%; font-size: 14px; text-align: center">
+                                            <i class="fas fa-coins"></i> ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(pagamento.total_fornecimento || 0)}
+                                        </button>
+                                    </td>
+                                    <td style="text-align: right;">
+                                        <button class="btn btn-sm btn-default" style="width: 100%; font-size: 14px; text-align: center">
+                                            <span style="color: #0d47a1;"><i class="fa fa-plus-circle"></i> ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(pagamento.total_credito || 0)}</span>
+                                        </button>
+                                    </td>
+                                    <td style="text-align: right;">
+                                        <button class="btn btn-sm btn-default" style="width: 100%;font-size: 14px; text-align: center">
+                                            <span style="color: #ac2925;"> <i class="fa fa-minus-circle"></i> ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalDeducao)}</span>
+                                        </button>
+                                    </td>
+                                    <td style="text-align: right;width: 100px;">
+                                        <button class="btn btn-sm ${(pagamento.total_pagamento || 0) >= 0 ? 'btn-success' : 'btn-danger'}" style="font-size: 14px;width: 100%;text-align: center;">
+                                            <i class="fa fa-${(pagamento.total_pagamento || 0) >= 0 ? 'plus' : 'minus'}-circle"></i> &nbsp;${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(pagamento.total_pagamento || 0)}
+                                        </button>
+                                    </td>
+                                    <td style="padding: 0px 0px 0px 0px; position: relative;">
+                                        <div class="row" style="margin-left: 0px;margin-right: 0px;">
+                                            <div class="col-sm-6" style="padding: 0px;">
+                                                <button class="md-icon-button" style="border: none; background: none; cursor: pointer; position: relative;">
+                                                    <span class="material-icons action-icon" style="font-family: 'Material Icons'; font-size: 24px; color: #666; display: inline-block; margin: 0 4px; line-height: 1; vertical-align: middle;">calculate</span>
+                                                </button>
+                                            </div>
+                                            <div class="col-sm-6" style="padding: 0px;">
+                                                <button class="md-icon-button" style="border: none; background: none; cursor: pointer; position: relative;">
+                                                    <span class="material-icons action-icon" style="font-family: 'Material Icons'; font-size: 24px; color: #666; display: inline-block; margin: 0 4px; line-height: 1; vertical-align: middle;">print</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </td>
+                                `;
+                                
+                                tbody.appendChild(headerRow);
+                                tbody.appendChild(dataRow);
+                            }
+                            const finalRowCount = tbody.querySelectorAll('tr').length;
+                            console.log(`✅ ${finalRowCount} linhas criadas manualmente (esperado: ${Math.min(pagamentos.length, 5) * 2})`);
+                            return true;
+                        } else {
+                            const errorInfo = {
+                                hasTbody: !!tbody,
+                                hasPagamentos: !!(pagamentos && pagamentos.length > 0),
+                                pagamentosCount: pagamentos ? pagamentos.length : 0,
+                                allTbodies: document.querySelectorAll('tbody').length,
+                                allTables: document.querySelectorAll('table').length
+                            };
+                            console.log('⚠️ Tbody não encontrado ou sem pagamentos:', JSON.stringify(errorInfo));
+                            return errorInfo;
+                        }
+                    }, additionalData.pagamentos);
+                    if (rowsCreated === true) {
+                        console.log('   ✅ Linhas criadas manualmente');
+                        // Aguardar um pouco para garantir renderização
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        
+                        // Verificar novamente se as linhas foram criadas
+                        const recheckRows = await page.evaluate(() => {
+                            const tbody = document.querySelector('tbody');
+                            if (tbody) {
+                                const rows = tbody.querySelectorAll('tr');
+                                return rows.length;
+                            }
+                            return 0;
+                        });
+                        console.log(`   📊 Linhas após criação manual: ${recheckRows}`);
+                        
+                        // Re-adicionar badges que podem ter sido perdidos (headers e ícones)
+                        if (recheckRows > 0 && config.elements) {
+                            console.log('   🔄 Re-adicionando badges para headers e ícones...');
+                            const missingBadges = config.elements.filter(el => el.number >= 8 && el.number <= 15);
+                            if (missingBadges.length > 0) {
+                                const badgesAdded = await page.evaluate((badges) => {
+                                    let added = 0;
+                                    
+                                    // Garantir que o dropdown esteja aberto para badge 13
+                                    const dropdownButton = document.querySelector('button[data-toggle="dropdown"]');
+                                    if (dropdownButton) {
+                                        dropdownButton.click();
+                                        // Aguardar um pouco para o dropdown abrir
+                                        setTimeout(() => {}, 100);
+                                    }
+                                    
+                                    badges.forEach(badge => {
+                                        let el = null;
+                                        
+                                        // Para headers (8-12), encontrar o thead
+                                        if (badge.number >= 8 && badge.number <= 12) {
+                                            const thead = document.querySelector('thead');
+                                            if (thead) {
+                                                const ths = thead.querySelectorAll('th');
+                                                const index = badge.number - 8; // 8->0, 9->1, etc
+                                                if (ths[index]) {
+                                                    el = ths[index];
+                                                }
+                                            }
+                                        }
+                                        // Para ícones de ação (14-15), encontrar na segunda linha
+                                        else if (badge.number >= 14 && badge.number <= 15) {
+                                            const secondRow = document.querySelector('tbody tr:nth-child(2)');
+                                            if (secondRow) {
+                                                const lastCell = secondRow.querySelector('td:last-child');
+                                                if (lastCell) {
+                                                    const iconDiv = lastCell.querySelector('div');
+                                                    if (iconDiv) {
+                                                        const allIcons = Array.from(iconDiv.querySelectorAll('.action-icon, span.material-icons'));
+                                                        if (badge.number === 14 && allIcons[0]) {
+                                                            el = allIcons[0];
+                                                        } else if (badge.number === 15 && allIcons[1]) {
+                                                            el = allIcons[1];
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        // Para outros, usar o seletor original
+                                        else {
+                                            el = document.querySelector(badge.selector);
+                                        }
+                                        
+                                        console.log(`📊 Badge ${badge.number}: elemento encontrado: ${!!el}, selector: ${badge.selector}`);
+                                        if (el && !el.querySelector('.element-number-badge')) {
+                                            const badgeEl = document.createElement('div');
+                                            badgeEl.className = 'element-number-badge';
+                                            badgeEl.setAttribute('data-number', badge.number);
+                                            badgeEl.textContent = badge.number;
+                                            badgeEl.style.position = 'absolute';
+                                            badgeEl.style.top = badge.position?.top || '-12px';
+                                            badgeEl.style.right = badge.position?.right || '5px';
+                                            badgeEl.style.backgroundColor = '#ff4444';
+                                            badgeEl.style.color = '#ffffff';
+                                            badgeEl.style.borderRadius = '50%';
+                                            badgeEl.style.width = '24px';
+                                            badgeEl.style.height = '24px';
+                                            badgeEl.style.fontSize = '14px';
+                                            badgeEl.style.fontWeight = 'bold';
+                                            badgeEl.style.lineHeight = '24px';
+                                            badgeEl.style.zIndex = '10000';
+                                            badgeEl.style.display = 'flex';
+                                            badgeEl.style.alignItems = 'center';
+                                            badgeEl.style.justifyContent = 'center';
+                                            badgeEl.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+                                            badgeEl.style.border = '2px solid white';
+                                            badgeEl.style.pointerEvents = 'none';
+                                            
+                                            const container = el.closest('th, td') || el;
+                                            if (container) {
+                                                container.style.position = 'relative';
+                                                container.appendChild(badgeEl);
+                                                added++;
+                                                console.log(`✅ Badge ${badge.number} adicionado após criação da tabela`);
+                                            }
+                                        } else if (el && el.querySelector('.element-number-badge')) {
+                                            console.log(`⚠️ Badge ${badge.number} já existe`);
+                                        }
+                                    });
+                                    return added;
+                                }, missingBadges);
+                                console.log(`   ✅ ${badgesAdded} badges adicionados após criação da tabela`);
+                            }
+                        }
+                    } else {
+                        console.log('   ⚠️ Falha ao criar linhas manualmente');
+                        if (typeof rowsCreated === 'object') {
+                            console.log('   📊 Detalhes do erro:', JSON.stringify(rowsCreated));
+                        }
+                    }
+                }
+            }
+            
+            // Verificar novamente após criação manual
+            if (finalCheck.isPagamentoPage) {
+                const recheck = await page.evaluate(() => {
+                    const cards = document.querySelectorAll('.card-group .card .fs-widget-number-22');
+                    const cardsWithData = Array.from(cards).filter(card => {
+                        const text = card.textContent.trim();
+                        return text && text.length > 0 && !text.includes('{{');
+                    });
+                    const tableRows = document.querySelectorAll('tbody tr');
+                    return {
+                        cardsCount: cards.length,
+                        cardsWithDataCount: cardsWithData.length,
                     rowCount: tableRows.length
                 };
             });
+                console.log(`📊 Verificação pós-criação manual: Cards ${recheck.cardsWithDataCount}/${recheck.cardsCount}, Linhas ${recheck.rowCount}`);
+            }
             
-            if (finalCheck.hasUnresolved || !finalCheck.titleHasData || !finalCheck.rowHasData) {
+            if (finalCheck.hasUnresolved || !finalCheck.titleHasData || (!finalCheck.rowHasData && !finalCheck.isPagamentoPage)) {
                 console.log('⚠️  Verificação final detectou problemas:');
                 console.log('   - Interpolações não resolvidas:', finalCheck.hasUnresolved);
                 console.log('   - Título com dados:', finalCheck.titleHasData, '| Texto:', finalCheck.titleText);
@@ -1162,9 +2341,49 @@ async function generateFormImage(config, databaseRecord = null) {
                 await page.evaluate((additionalData) => {
                     const body = document.body;
                     
-                    // Verificar se há linhas na tabela
+                    // Verificar se é aba de pagamentos
+                    const isPagamentoPage = body.querySelector('[ng-controller="folha.pagamento.ListCtrl"]') !== null;
+                    
+                    if (isPagamentoPage && additionalData.pagamentos && additionalData.pagamentos.length > 0) {
+                        // Para aba de pagamentos, garantir que os cards e tabela estejam visíveis
+                        const cards = body.querySelectorAll('.card-group .card .fs-widget-number-22');
+                        cards.forEach(card => {
+                            card.style.display = 'block';
+                            card.style.visibility = 'visible';
+                            card.style.opacity = '1';
+                        });
+                        
+                        // Garantir que a tabela esteja visível
+                        const tableContainer = body.querySelector('md-table-container, .table-responsive');
+                        if (tableContainer) {
+                            tableContainer.style.display = 'block';
+                            tableContainer.style.visibility = 'visible';
+                        }
+                        
+                        // Verificar se há linhas na tabela
+                        const tbody = body.querySelector('tbody');
+                        if (tbody) {
+                            const rows = tbody.querySelectorAll('tr');
+                            console.log('Linhas de pagamento encontradas:', rows.length);
+                            
+                            // Garantir que todas as linhas sejam visíveis
+                            rows.forEach(row => {
+                                row.style.display = 'table-row';
+                                row.style.visibility = 'visible';
+                                row.style.opacity = '1';
+                                row.style.height = 'auto';
+                            });
+                            
+                            // Se não há linhas, verificar se o pré-processamento criou as linhas
+                            if (rows.length === 0) {
+                                console.log('⚠️ Nenhuma linha encontrada na tabela de pagamentos');
+                            }
+                        }
+                    }
+                    
+                    // Verificar se há linhas na tabela (para outras páginas)
                     const tbody = body.querySelector('tbody');
-                    if (tbody) {
+                    if (tbody && !isPagamentoPage) {
                         const rows = tbody.querySelectorAll('tr');
                         console.log('Linhas encontradas no tbody:', rows.length);
                         
@@ -1903,6 +3122,503 @@ async function generateFormImage(config, databaseRecord = null) {
         if (!debugInfo.allRowsVisible) {
             console.log('⚠️ Algumas linhas não estão visíveis, aplicando correções...');
         }
+    }
+    
+    // Verificação final antes do screenshot - garantir que cards e ícones estejam visíveis
+    if (additionalData.pagamentos && additionalData.pagamentos.length > 0) {
+        await page.evaluate((estatisticas) => {
+            // Garantir que o dropdown esteja aberto para mostrar o badge 13
+            const dropdownButton = document.querySelector('button[data-toggle="dropdown"]');
+            const dropdownMenu = document.querySelector('ul.dropdown-menu');
+            if (dropdownButton && dropdownMenu) {
+                // Remover classes que podem estar ocultando o dropdown
+                dropdownMenu.classList.remove('hidden');
+                dropdownMenu.style.setProperty('display', 'block', 'important');
+                dropdownMenu.style.setProperty('visibility', 'visible', 'important');
+                dropdownMenu.style.setProperty('opacity', '1', 'important');
+                dropdownMenu.style.setProperty('position', 'absolute', 'important');
+                dropdownMenu.style.setProperty('z-index', '1000', 'important');
+                
+                // Garantir que o link de recalcular folha esteja visível
+                const recalcularLink = dropdownMenu.querySelector('a[ng-click="recalculaPagamentos()"]');
+                if (recalcularLink) {
+                    recalcularLink.style.setProperty('display', 'block', 'important');
+                    recalcularLink.style.setProperty('visibility', 'visible', 'important');
+                }
+            }
+            
+            // Remover ng-if que pode estar ocultando elementos
+            const ngIfElements = document.querySelectorAll('[ng-if]');
+            ngIfElements.forEach(el => {
+                const ngIf = el.getAttribute('ng-if');
+                // Se for !isCalculating, remover o atributo e garantir visibilidade
+                if (ngIf === '!isCalculating' || ngIf.includes('!isCalculating')) {
+                    el.removeAttribute('ng-if');
+                    el.style.display = 'block';
+                    el.style.visibility = 'visible';
+                    el.style.opacity = '1';
+                }
+            });
+            
+            // Garantir que todos os cards estejam visíveis
+            const cardGroup = document.querySelector('.card-group');
+            if (cardGroup) {
+                // Remover ng-if do card-group se existir
+                cardGroup.removeAttribute('ng-if');
+                cardGroup.style.setProperty('display', 'flex', 'important');
+                cardGroup.style.setProperty('visibility', 'visible', 'important');
+                cardGroup.style.setProperty('opacity', '1', 'important');
+                cardGroup.style.setProperty('width', '100%', 'important');
+                cardGroup.style.setProperty('max-width', '100%', 'important');
+                cardGroup.style.setProperty('margin-bottom', '20px', 'important');
+                cardGroup.style.setProperty('position', 'relative', 'important');
+                cardGroup.style.setProperty('overflow', 'visible', 'important');
+                cardGroup.style.setProperty('z-index', '1', 'important');
+                
+                // Garantir que o container dos cards tenha a mesma largura da tabela
+                const coreUiNeton = cardGroup.closest('.core-ui-neton');
+                if (coreUiNeton) {
+                    coreUiNeton.style.setProperty('width', '100%', 'important');
+                    coreUiNeton.style.setProperty('max-width', '100%', 'important');
+                }
+                
+                // Garantir que a tabela tenha a mesma largura e sincronizar com os cards
+                const tableForAlignment = document.querySelector('table');
+                const tableContainer = document.querySelector('md-table-container, .table-responsive');
+                if (tableForAlignment) {
+                    const tableWidth = tableForAlignment.offsetWidth || tableForAlignment.clientWidth || tableForAlignment.getBoundingClientRect().width;
+                    const tableContainerWidth = tableContainer ? (tableContainer.offsetWidth || tableContainer.clientWidth || tableContainer.getBoundingClientRect().width) : 0;
+                    const effectiveTableWidth = tableContainerWidth > 0 ? tableContainerWidth : tableWidth;
+                    
+                    if (effectiveTableWidth > 0) {
+                        // Usar a largura da tabela como referência
+                        const targetWidth = effectiveTableWidth;
+                        
+                        // Aplicar a mesma largura aos cards
+                        cardGroup.style.setProperty('width', targetWidth + 'px', 'important');
+                        cardGroup.style.setProperty('max-width', targetWidth + 'px', 'important');
+                        cardGroup.style.setProperty('min-width', targetWidth + 'px', 'important');
+                        
+                        // Garantir que o container dos cards também tenha a mesma largura e alinhamento
+                        const coreUiNeton = cardGroup.closest('.core-ui-neton');
+                        if (coreUiNeton) {
+                            coreUiNeton.style.setProperty('width', targetWidth + 'px', 'important');
+                            coreUiNeton.style.setProperty('max-width', targetWidth + 'px', 'important');
+                            // Remover padding para alinhar com a tabela
+                            coreUiNeton.style.setProperty('padding', '0', 'important');
+                            coreUiNeton.style.setProperty('padding-left', '0', 'important');
+                            coreUiNeton.style.setProperty('padding-right', '0', 'important');
+                            coreUiNeton.style.setProperty('margin-left', '0', 'important');
+                            coreUiNeton.style.setProperty('margin-right', '0', 'important');
+                        }
+                        
+                        // Alinhar cards com a margem esquerda da tabela
+                        // Pegar a posição absoluta da tabela e dos cards
+                        const tableRect = tableForAlignment.getBoundingClientRect();
+                        const cardGroupRect = cardGroup.getBoundingClientRect();
+                        
+                        // Calcular a diferença de posição horizontal
+                        const offsetDiff = tableRect.left - cardGroupRect.left;
+                        
+                        if (Math.abs(offsetDiff) > 1) {
+                            // Aplicar o offset aos cards
+                            const currentMarginLeft = parseInt(window.getComputedStyle(cardGroup).marginLeft) || 0;
+                            cardGroup.style.setProperty('margin-left', (currentMarginLeft + offsetDiff) + 'px', 'important');
+                            console.log(`📊 Alinhamento ajustado: offset=${offsetDiff}px`);
+                        }
+                        
+                        // Garantir que cada card tenha largura proporcional
+                        const cards = cardGroup.querySelectorAll('.card');
+                        if (cards.length > 0) {
+                            const cardWidth = (targetWidth - (cards.length * 20)) / cards.length; // 20px de margem entre cards
+                            cards.forEach(card => {
+                                card.style.setProperty('width', cardWidth + 'px', 'important');
+                                card.style.setProperty('min-width', cardWidth + 'px', 'important');
+                                card.style.setProperty('max-width', cardWidth + 'px', 'important');
+                            });
+                        }
+                        
+                        console.log(`📊 Larguras sincronizadas: Tabela=${effectiveTableWidth}px, Cards=${targetWidth}px`);
+                    }
+                } else {
+                    // Se não encontrou a tabela, apenas remover padding dos cards
+                    const coreUiNeton = cardGroup.closest('.core-ui-neton');
+                    if (coreUiNeton) {
+                        coreUiNeton.style.setProperty('padding', '0', 'important');
+                        console.log(`📊 Padding dos cards removido (tabela não encontrada)`);
+                    }
+                }
+                
+                const cards = cardGroup.querySelectorAll('.card');
+                console.log(`📊 Cards encontrados: ${cards.length}`);
+                cards.forEach((card, index) => {
+                    card.style.setProperty('display', 'block', 'important');
+                    card.style.setProperty('visibility', 'visible', 'important');
+                    card.style.setProperty('opacity', '1', 'important');
+                    card.style.setProperty('height', 'auto', 'important');
+                    card.style.setProperty('background', 'white', 'important');
+                    card.style.setProperty('border', '1px solid #ddd', 'important');
+                    card.style.setProperty('border-radius', '4px', 'important');
+                    card.style.setProperty('margin', '0 10px', 'important');
+                    card.style.setProperty('flex', '1', 'important');
+                    card.style.setProperty('min-width', '150px', 'important');
+                    
+                    // Garantir que card-body esteja visível
+                    const cardBody = card.querySelector('.card-body');
+                    if (cardBody) {
+                        cardBody.style.setProperty('display', 'block', 'important');
+                        cardBody.style.setProperty('visibility', 'visible', 'important');
+                        cardBody.style.setProperty('padding', '15px', 'important');
+                        cardBody.style.setProperty('min-height', '100px', 'important');
+                    }
+                    
+                    // Garantir que números estejam visíveis e com valores
+                    const numbers = card.querySelectorAll('.fs-widget-number-22');
+                    numbers.forEach((num, numIndex) => {
+                        num.style.setProperty('display', 'block', 'important');
+                        num.style.setProperty('visibility', 'visible', 'important');
+                        num.style.setProperty('opacity', '1', 'important');
+                        num.style.setProperty('font-size', '22px', 'important');
+                        num.style.setProperty('font-weight', 'bold', 'important');
+                        num.style.setProperty('color', '#333', 'important');
+                        num.style.setProperty('margin', '10px 0', 'important');
+                        num.style.setProperty('position', 'relative', 'important');
+                        num.style.setProperty('overflow', 'visible', 'important');
+                        num.style.setProperty('z-index', '1', 'important');
+                        
+                        // Garantir que badges nos números estejam visíveis
+                        const badge = num.querySelector('.element-number-badge');
+                        if (badge) {
+                            badge.style.setProperty('position', 'absolute', 'important');
+                            badge.style.setProperty('top', '-12px', 'important');
+                            badge.style.setProperty('right', '5px', 'important');
+                            badge.style.setProperty('z-index', '10001', 'important');
+                            badge.style.setProperty('display', 'flex', 'important');
+                            badge.style.setProperty('visibility', 'visible', 'important');
+                            badge.style.setProperty('opacity', '1', 'important');
+                        }
+                        
+                        // Garantir que tenha conteúdo
+                        if (!num.textContent || num.textContent.trim() === '' || num.textContent.includes('{{')) {
+                            if (estatisticas && numIndex === 0) {
+                                num.textContent = estatisticas.totalDemonstrativos || 0;
+                            } else if (estatisticas && numIndex === 1) {
+                                num.textContent = (estatisticas.volumeCaptado || 0).toLocaleString('pt-BR') + ' L';
+                            } else if (estatisticas && numIndex === 2) {
+                                num.textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(estatisticas.totalBruto || 0);
+                            } else if (estatisticas && numIndex === 3) {
+                                num.textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(estatisticas.totalLiquido || 0);
+                            } else if (estatisticas && numIndex === 4) {
+                                num.textContent = (estatisticas.precoMedio || 0).toFixed(3);
+                            }
+                        }
+                    });
+                    
+                    // Garantir que labels estejam visíveis
+                    const labels = card.querySelectorAll('.fs-widget-label');
+                    labels.forEach(label => {
+                        label.style.setProperty('display', 'block', 'important');
+                        label.style.setProperty('visibility', 'visible', 'important');
+                        label.style.setProperty('font-size', '12px', 'important');
+                        label.style.setProperty('color', '#666', 'important');
+                    });
+                    
+                    // Garantir que ícones dos cards estejam visíveis
+                    const icons = card.querySelectorAll('i');
+                    icons.forEach(icon => {
+                        icon.style.setProperty('display', 'inline-block', 'important');
+                        icon.style.setProperty('visibility', 'visible', 'important');
+                        icon.style.setProperty('opacity', '1', 'important');
+                        icon.style.setProperty('font-size', '24px', 'important');
+                    });
+                });
+                
+                console.log(`✅ ${cards.length} cards garantidos como visíveis`);
+            } else {
+                console.log('⚠️ CardGroup não encontrado');
+            }
+            
+            // Garantir que ícones de ação na tabela estejam visíveis
+            const actionIcons = document.querySelectorAll('.action-icon, .material-icons');
+            actionIcons.forEach(icon => {
+                icon.style.setProperty('display', 'inline-block', 'important');
+                icon.style.setProperty('visibility', 'visible', 'important');
+                icon.style.setProperty('opacity', '1', 'important');
+                icon.style.setProperty('font-size', '24px', 'important');
+                icon.style.setProperty('font-family', "'Material Icons'", 'important');
+                icon.style.setProperty('color', '#666', 'important');
+            });
+            console.log(`✅ ${actionIcons.length} ícones de ação garantidos como visíveis`);
+            
+            // Garantir que a tabela esteja visível
+            const tableForVisibility = document.querySelector('table');
+            if (tableForVisibility) {
+                tableForVisibility.style.setProperty('display', 'table', 'important');
+                tableForVisibility.style.setProperty('visibility', 'visible', 'important');
+            }
+            
+            const tbody = document.querySelector('tbody');
+            if (tbody) {
+                tbody.style.setProperty('display', 'table-row-group', 'important');
+                tbody.style.setProperty('visibility', 'visible', 'important');
+                
+                const rows = tbody.querySelectorAll('tr');
+                rows.forEach(row => {
+                    row.style.setProperty('display', 'table-row', 'important');
+                    row.style.setProperty('visibility', 'visible', 'important');
+                    row.style.setProperty('opacity', '1', 'important');
+                });
+            }
+            
+            // Verificação final: garantir que badges dos cards estejam visíveis
+            const cardBadges = document.querySelectorAll('.card .element-number-badge');
+            console.log(`📊 Badges nos cards encontrados: ${cardBadges.length}`);
+            cardBadges.forEach((badge, index) => {
+                badge.style.setProperty('position', 'absolute', 'important');
+                badge.style.setProperty('top', '-12px', 'important');
+                badge.style.setProperty('right', '5px', 'important');
+                badge.style.setProperty('z-index', '10001', 'important');
+                badge.style.setProperty('display', 'flex', 'important');
+                badge.style.setProperty('visibility', 'visible', 'important');
+                badge.style.setProperty('opacity', '1', 'important');
+                badge.style.setProperty('background', '#ff4444', 'important');
+                badge.style.setProperty('color', '#ffffff', 'important');
+                badge.style.setProperty('border', '2px solid white', 'important');
+                badge.style.setProperty('border-radius', '50%', 'important');
+                badge.style.setProperty('width', '24px', 'important');
+                badge.style.setProperty('height', '24px', 'important');
+                badge.style.setProperty('font-size', '14px', 'important');
+                badge.style.setProperty('font-weight', 'bold', 'important');
+                badge.style.setProperty('box-shadow', '0 2px 4px rgba(0,0,0,0.3)', 'important');
+                
+                // Garantir que o container (número) tenha position relative
+                const numberEl = badge.closest('.fs-widget-number-22');
+                if (numberEl) {
+                    numberEl.style.setProperty('position', 'relative', 'important');
+                    numberEl.style.setProperty('overflow', 'visible', 'important');
+                }
+                
+                // Garantir que o card tenha overflow visible
+                const card = badge.closest('.card');
+                if (card) {
+                    card.style.setProperty('overflow', 'visible', 'important');
+                }
+                
+                console.log(`✅ Badge ${badge.textContent} nos cards garantido como visível`);
+            });
+            
+            // Alinhar cards com a margem esquerda da tabela (verificação final)
+            const tableElementFinal = document.querySelector('table');
+            const cardGroupElementFinal = document.querySelector('.card-group');
+            
+            if (tableElementFinal && cardGroupElementFinal) {
+                // Remover todo padding do container dos cards
+                const coreUiNetonFinal = cardGroupElementFinal.closest('.core-ui-neton');
+                if (coreUiNetonFinal) {
+                    coreUiNetonFinal.style.setProperty('padding', '0', 'important');
+                    coreUiNetonFinal.style.setProperty('padding-left', '0', 'important');
+                    coreUiNetonFinal.style.setProperty('padding-right', '0', 'important');
+                    coreUiNetonFinal.style.setProperty('margin-left', '0', 'important');
+                    coreUiNetonFinal.style.setProperty('margin-right', '0', 'important');
+                }
+                
+                // Pegar a posição absoluta da tabela e dos cards
+                const tableRect = tableElementFinal.getBoundingClientRect();
+                const cardGroupRect = cardGroupElementFinal.getBoundingClientRect();
+                
+                // Calcular a diferença de posição horizontal
+                const offsetDiff = tableRect.left - cardGroupRect.left;
+                
+                if (Math.abs(offsetDiff) > 1) {
+                    // Aplicar o offset aos cards
+                    const currentMarginLeft = parseInt(window.getComputedStyle(cardGroupElementFinal).marginLeft) || 0;
+                    cardGroupElementFinal.style.setProperty('margin-left', (currentMarginLeft + offsetDiff) + 'px', 'important');
+                    console.log(`📊 Alinhamento final ajustado: offset=${offsetDiff}px, margin-left=${currentMarginLeft + offsetDiff}px`);
+                } else {
+                    console.log(`📊 Cards já estão alinhados com a tabela`);
+                }
+            }
+            
+            console.log('✅ Verificação final: cards, ícones e tabela garantidos como visíveis');
+        }, additionalData.estatisticasFolha);
+        
+        // Aguardar um pouco para garantir renderização
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Verificação final de alinhamento antes do screenshot
+        await page.evaluate(() => {
+            const tableForAlign = document.querySelector('table');
+            const cardGroupForAlign = document.querySelector('.card-group');
+            
+            if (tableForAlign) {
+                // Pegar a largura e posição da tabela
+                const tableRect = tableForAlign.getBoundingClientRect();
+                const tableWidth = tableRect.width;
+                const tableLeft = tableRect.left;
+                
+                console.log(`📊 Tabela encontrada: largura=${tableWidth}px, posição esquerda=${tableLeft}px`);
+                
+                // Encontrar todos os painéis que precisam ser ajustados
+                const panels = document.querySelectorAll('.panel.panel-default');
+                console.log(`📊 Painéis encontrados: ${panels.length}`);
+                
+                panels.forEach((panel, index) => {
+                    // Pegar a posição atual do painel
+                    const panelRect = panel.getBoundingClientRect();
+                    const panelLeft = panelRect.left;
+                    const panelWidth = panelRect.width;
+                    
+                    console.log(`📊 Painel ${index + 1}: largura atual=${panelWidth}px, posição esquerda=${panelLeft}px`);
+                    
+                    // Calcular o offset necessário para alinhar pela margem esquerda
+                    const offsetDiff = tableLeft - panelLeft;
+                    
+                    // Aplicar a largura da tabela ao painel
+                    panel.style.setProperty('width', tableWidth + 'px', 'important');
+                    panel.style.setProperty('max-width', tableWidth + 'px', 'important');
+                    panel.style.setProperty('min-width', tableWidth + 'px', 'important');
+                    panel.style.setProperty('box-sizing', 'border-box', 'important');
+                    
+                    // Aplicar o offset para alinhar pela margem esquerda
+                    // Usar position relative e left para garantir alinhamento preciso
+                    const currentLeft = parseInt(window.getComputedStyle(panel).left) || 0;
+                    const currentMarginLeft = parseInt(window.getComputedStyle(panel).marginLeft) || 0;
+                    
+                    // Calcular a posição absoluta necessária
+                    const bodyRect = document.body.getBoundingClientRect();
+                    const targetLeft = tableLeft - bodyRect.left;
+                    const currentPanelLeft = panelLeft - bodyRect.left;
+                    const finalOffset = targetLeft - currentPanelLeft;
+                    
+                    panel.style.setProperty('margin-left', (currentMarginLeft + finalOffset) + 'px', 'important');
+                    panel.style.setProperty('margin-right', 'auto', 'important');
+                    panel.style.setProperty('position', 'relative', 'important');
+                    
+                    console.log(`📊 Painel ${index + 1} ajustado: largura=${tableWidth}px, offset=${finalOffset}px, margin-left=${currentMarginLeft + finalOffset}px`);
+                    
+                    // Ajustar o panel-heading e panel-body para ocupar toda a largura
+                    const panelHeading = panel.querySelector('.panel-heading');
+                    if (panelHeading) {
+                        panelHeading.style.setProperty('width', '100%', 'important');
+                        panelHeading.style.setProperty('box-sizing', 'border-box', 'important');
+                        panelHeading.style.setProperty('padding-left', '15px', 'important');
+                        panelHeading.style.setProperty('padding-right', '15px', 'important');
+                    }
+                    
+                    const panelBody = panel.querySelector('.panel-body');
+                    if (panelBody) {
+                        panelBody.style.setProperty('width', '100%', 'important');
+                        panelBody.style.setProperty('box-sizing', 'border-box', 'important');
+                    }
+                    
+                    // Ajustar o core-ui-neton dentro do painel
+                    const coreUiNeton = panel.querySelector('.core-ui-neton');
+                    if (coreUiNeton) {
+                        coreUiNeton.style.setProperty('width', '100%', 'important');
+                        coreUiNeton.style.setProperty('box-sizing', 'border-box', 'important');
+                    }
+                });
+                
+                // Ajustar o container dos cards
+                if (cardGroupForAlign) {
+                    // Remover todo padding do container dos cards
+                    const coreUiNetonForAlign = cardGroupForAlign.closest('.core-ui-neton');
+                    if (coreUiNetonForAlign) {
+                        coreUiNetonForAlign.style.setProperty('padding', '0', 'important');
+                        coreUiNetonForAlign.style.setProperty('padding-left', '0', 'important');
+                        coreUiNetonForAlign.style.setProperty('padding-right', '0', 'important');
+                        coreUiNetonForAlign.style.setProperty('margin-left', '0', 'important');
+                        coreUiNetonForAlign.style.setProperty('margin-right', '0', 'important');
+                        coreUiNetonForAlign.style.setProperty('width', '100%', 'important');
+                        coreUiNetonForAlign.style.setProperty('max-width', '100%', 'important');
+                    }
+                    
+                    // Pegar a posição absoluta da tabela e dos cards
+                    const cardGroupRect = cardGroupForAlign.getBoundingClientRect();
+                    
+                    // Calcular a diferença de posição horizontal
+                    const offsetDiff = tableLeft - cardGroupRect.left;
+                    
+                    if (Math.abs(offsetDiff) > 1) {
+                        // Aplicar o offset aos cards
+                        const currentMarginLeft = parseInt(window.getComputedStyle(cardGroupForAlign).marginLeft) || 0;
+                        cardGroupForAlign.style.setProperty('margin-left', (currentMarginLeft + offsetDiff) + 'px', 'important');
+                        console.log(`📊 Cards ajustados: offset=${offsetDiff}px, margin-left=${currentMarginLeft + offsetDiff}px`);
+                    } else {
+                        console.log(`📊 Cards já estão alinhados com a tabela (offset=${offsetDiff}px)`);
+                    }
+                }
+                
+                // Ajustar os containers row e col-sm-12 para garantir alinhamento
+                const rows = document.querySelectorAll('.row');
+                rows.forEach(row => {
+                    const rowRect = row.getBoundingClientRect();
+                    const rowOffsetDiff = tableLeft - rowRect.left;
+                    
+                    if (Math.abs(rowOffsetDiff) > 1) {
+                        const currentMarginLeft = parseInt(window.getComputedStyle(row).marginLeft) || 0;
+                        row.style.setProperty('margin-left', (currentMarginLeft + rowOffsetDiff) + 'px', 'important');
+                        row.style.setProperty('margin-right', 'auto', 'important');
+                    }
+                });
+                
+                const colSm12s = document.querySelectorAll('.col-sm-12');
+                colSm12s.forEach(col => {
+                    col.style.setProperty('padding-left', '0', 'important');
+                    col.style.setProperty('padding-right', '0', 'important');
+                });
+                
+                // Ajustar o wrapper para garantir que não haja padding extra
+                const wrapper = document.querySelector('.wrapper-xs');
+                if (wrapper) {
+                    wrapper.style.setProperty('padding-left', '0', 'important');
+                    wrapper.style.setProperty('padding-right', '0', 'important');
+                }
+                
+                return {
+                    tableWidth: tableWidth,
+                    tableLeft: tableLeft,
+                    panelsCount: panels.length,
+                    success: true
+                };
+            } else {
+                console.log('⚠️ Tabela não encontrada para alinhamento');
+                return { success: false, error: 'Tabela não encontrada' };
+            }
+        });
+        
+        // Log do resultado do alinhamento
+        const alignResult = await page.evaluate(() => {
+            const tableForAlign = document.querySelector('table');
+            if (tableForAlign) {
+                const tableRect = tableForAlign.getBoundingClientRect();
+                const panels = document.querySelectorAll('.panel.panel-default');
+                return {
+                    tableWidth: tableRect.width,
+                    tableLeft: tableRect.left,
+                    panelsCount: panels.length,
+                    panelsInfo: Array.from(panels).map((panel, index) => {
+                        const rect = panel.getBoundingClientRect();
+                        return {
+                            index: index + 1,
+                            width: rect.width,
+                            left: rect.left
+                        };
+                    })
+                };
+            }
+            return null;
+        });
+        
+        if (alignResult) {
+            console.log(`📊 Alinhamento aplicado: Tabela largura=${alignResult.tableWidth}px, Painéis=${alignResult.panelsCount}`);
+            alignResult.panelsInfo.forEach(info => {
+                console.log(`   - Painel ${info.index}: largura=${info.width}px, posição=${info.left}px`);
+            });
+        }
+        
+        // Aguardar um pouco mais para garantir que o alinhamento foi aplicado
+        await new Promise(resolve => setTimeout(resolve, 200));
     }
     
     // Capturar screenshot

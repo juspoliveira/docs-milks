@@ -1,0 +1,69 @@
+{
+  "record": {
+    "id": 581,
+    "codigo": "FOL-2025-10",
+    "referencia": "OUTUBRO 2025",
+    "dt_inicio_fornecimento": "2025-10-01",
+    "dt_fim_fornecimento": "2025-10-31",
+    "tipo_data_corte": "V",
+    "status": "A",
+    "simulacao": 0,
+    "consolidacao_id": 547
+  },
+  "consolidacoes": [
+    {
+      "id": 547,
+      "descricao": "OUTUBRO 2025"
+    },
+    {
+      "id": 530,
+      "descricao": "SETEMBRO 2025"
+    },
+    {
+      "id": 498,
+      "descricao": "Agosto 2025"
+    },
+    {
+      "id": 469,
+      "descricao": "CONSOLIDAÇÃO"
+    },
+    {
+      "id": 430,
+      "descricao": "MAIO 2025"
+    }
+  ],
+  "statusFolha": [
+    {
+      "id": "A",
+      "nome": "Aberta"
+    },
+    {
+      "id": "B",
+      "nome": "Bloqueada"
+    },
+    {
+      "id": "F",
+      "nome": "Fechada"
+    }
+  ],
+  "tiposFolha": [
+    {
+      "id": 0,
+      "nome": "Folha"
+    },
+    {
+      "id": 1,
+      "nome": "Simulação"
+    }
+  ],
+  "tiposDataCorte": [
+    {
+      "id": "C",
+      "display": "Coleta"
+    },
+    {
+      "id": "V",
+      "display": "Viagem"
+    }
+  ]
+}
