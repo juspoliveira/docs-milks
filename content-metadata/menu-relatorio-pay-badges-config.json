@@ -1,0 +1,41 @@
+{
+  "sourceImage": "assets/menu-relatorio-pay.png",
+  "outputImage": "content/relatorio-menu.png",
+  "badges": [
+    {
+      "number": 1,
+      "name": "Conciliação de folha de pagamento",
+      "x": 560,
+      "y": 380,
+      "description": "Opção do menu para acessar o relatório de conciliação de folha de pagamento"
+    },
+    {
+      "number": 2,
+      "name": "Custo flash",
+      "x": 560,
+      "y": 480,
+      "description": "Opção do menu para acessar o relatório de custo flash"
+    },
+    {
+      "number": 3,
+      "name": "Controle de pagamentos",
+      "x": 560,
+      "y": 620,
+      "description": "Opção do menu para acessar o relatório de controle de pagamentos"
+    },
+    {
+      "number": 4,
+      "name": "Análise de pagamentos de produtores",
+      "x": 560,
+      "y": 760,
+      "description": "Opção do menu para acessar o relatório de análise de pagamentos de produtores"
+    },
+    {
+      "number": 5,
+      "name": "Informe de Rendimentos",
+      "x": 560,
+      "y": 900,
+      "description": "Opção do menu para acessar o relatório de informe de rendimentos"
+    }
+  ]
+}

@@ -146,6 +146,15 @@ export async function processAngularTemplates(page, additionalData = {}) {
                 console.log('Módulo pay.folha criado');
             }
             
+            let appRelatorioPagamento;
+            try {
+                appRelatorioPagamento = angular.module('pay.relatoriopagamento');
+                console.log('Módulo pay.relatoriopagamento já existe');
+            } catch (e) {
+                appRelatorioPagamento = angular.module('pay.relatoriopagamento', []);
+                console.log('Módulo pay.relatoriopagamento criado');
+            }
+            
             // Define the folha ListCtrl controller
             appFolha.controller('folha.ListCtrl', [
                 '$scope',
