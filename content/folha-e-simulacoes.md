@@ -149,6 +149,162 @@ O preço médio é uma métrica de referência e não afeta diretamente os cálc
 
 ---
 
+## Formulário de Folha de Pagamento
+
+O formulário de folha de pagamento permite criar novas folhas ou editar folhas existentes. O formulário é usado tanto para folhas normais quanto para simulações, com alguns campos sendo exibidos condicionalmente baseado no tipo de folha.
+
+<figure>
+  <img src="folha-form.png" alt="Formulário de folha de pagamento do módulo Pay">
+  <figcaption>Formulário de folha de pagamento do módulo Pay</figcaption>
+</figure>
+
+> **Nota**: Formulário de criação e edição de folhas de pagamento com os campos principais numerados para referência.
+
+## Descrição dos Elementos do Formulário
+
+Seguindo a numeração presente na imagem acima:
+
+**1. Código**
+
+Campo de texto opcional que permite definir um código identificador para a folha de pagamento (máximo 20 caracteres). Este campo só aparece para folhas normais (não simulações).
+
+**Como ajustar:**
+- Ao criar ou editar uma folha, preencha o campo "Código" com um identificador único
+- O código é opcional, mas recomendado para facilitar a identificação da folha
+- Não pode ser editado quando a folha está fechada
+
+**Para que serve:**
+Permite identificar a folha de pagamento através de um código personalizado, facilitando a busca e organização das folhas no sistema.
+
+**Como afeta o cálculo:**
+O código não afeta os cálculos da folha, sendo apenas um identificador para organização e referência.
+
+---
+
+**2. Consolidação**
+
+Campo obrigatório do tipo select2 que permite selecionar uma consolidação de qualidade fechada para vincular à folha de pagamento.
+
+**Como ajustar:**
+- Clique no campo "Consolidação" para abrir a lista de consolidações disponíveis
+- Apenas consolidações fechadas aparecem na lista
+- Selecione a consolidação desejada
+- O campo é obrigatório e deve ser preenchido para salvar a folha
+
+**Para que serve:**
+Vincula a folha de pagamento a uma consolidação de qualidade específica, garantindo que os dados de qualidade utilizados nos cálculos sejam consistentes e fechados.
+
+**Como afeta o cálculo:**
+A consolidação selecionada determina quais dados de qualidade (análises laboratoriais, indicadores, etc.) serão utilizados no cálculo dos pagamentos dos produtores. Alterar a consolidação após o cálculo força o recálculo da folha.
+
+---
+
+**3. Referência**
+
+Campo de texto obrigatório que identifica a referência da folha de pagamento (máximo 60 caracteres). Geralmente contém informações como mês/ano ou período.
+
+**Como ajustar:**
+- Preencha o campo "Referência" com um identificador descritivo (ex: "OUTUBRO 2025", "2025/10")
+- O campo é obrigatório e deve ser preenchido para salvar a folha
+- Não pode ser editado quando a folha está fechada
+
+**Para que serve:**
+Identifica a folha de pagamento através de uma referência descritiva, facilitando a localização e organização das folhas no sistema.
+
+**Como afeta o cálculo:**
+A referência não afeta os cálculos da folha, sendo apenas um identificador para organização e referência.
+
+---
+
+**4. Data de corte por**
+
+Campo do tipo select2 que permite escolher a base de cálculo para as datas de corte (Coleta ou Viagem). Este campo só aparece para folhas normais (não simulações).
+
+**Como ajustar:**
+- Selecione "Coleta" para usar a data de coleta do leite como base
+- Selecione "Viagem" para usar a data da viagem de transporte como base
+- O campo é opcional e tem valor padrão "Viagem"
+
+**Para que serve:**
+Define qual data será utilizada como referência para determinar o período de fornecimento considerado no cálculo da folha.
+
+**Como afeta o cálculo:**
+A escolha entre "Coleta" e "Viagem" determina quais registros de fornecimento serão incluídos no período da folha, baseado na data selecionada. Isso pode afetar quais produtores e volumes serão considerados no cálculo.
+
+---
+
+**5. Data de corte inicial**
+
+Campo de data obrigatório que define o início do período de fornecimento considerado na folha de pagamento.
+
+**Como ajustar:**
+- Preencha o campo com a data inicial do período (formato DD/MM/AAAA)
+- O campo é obrigatório e deve ser preenchido para salvar a folha
+- Para folhas existentes, só pode ser editado durante a criação (não pode ser alterado após salvar)
+
+**Para que serve:**
+Define o início do período de fornecimento de leite que será considerado no cálculo da folha de pagamento.
+
+**Como afeta o cálculo:**
+A data inicial determina quais registros de fornecimento serão incluídos no cálculo. Apenas fornecimentos com data igual ou posterior à data inicial serão considerados.
+
+---
+
+**6. Data de corte final**
+
+Campo de data obrigatório que define o fim do período de fornecimento considerado na folha de pagamento.
+
+**Como ajustar:**
+- Preencha o campo com a data final do período (formato DD/MM/AAAA)
+- O campo é obrigatório e deve ser preenchido para salvar a folha
+- A data final deve ser posterior à data inicial
+- Para folhas existentes, só pode ser editado durante a criação (não pode ser alterado após salvar)
+
+**Para que serve:**
+Define o fim do período de fornecimento de leite que será considerado no cálculo da folha de pagamento.
+
+**Como afeta o cálculo:**
+A data final determina quais registros de fornecimento serão incluídos no cálculo. Apenas fornecimentos com data igual ou anterior à data final serão considerados.
+
+---
+
+**7. Status**
+
+Campo do tipo select2 que exibe o status atual da folha de pagamento (Aberta, Bloqueada ou Fechada). Este campo só aparece para folhas normais (não simulações) e está sempre desabilitado.
+
+**Como ajustar:**
+- O status é definido automaticamente pelo sistema
+- "Aberta" (A): Folha criada e disponível para cálculo e edição
+- "Bloqueada" (B): Folha bloqueada devido a consolidação de qualidade aberta
+- "Fechada" (F): Folha finalizada e não pode mais ser editada
+- O campo não pode ser editado diretamente
+
+**Para que serve:**
+Indica o estado atual da folha, permitindo identificar rapidamente quais folhas podem ser editadas, calculadas ou estão finalizadas.
+
+**Como afeta o cálculo:**
+Folhas fechadas não podem mais ser recalculadas ou editadas. Folhas bloqueadas não podem ser calculadas até que a consolidação de qualidade seja fechada.
+
+---
+
+**8. Tipo**
+
+Campo do tipo select2 que exibe o tipo da folha (Folha ou Simulação). O campo está sempre visível e desabilitado.
+
+**Como ajustar:**
+- O tipo é definido no momento da criação da folha
+- "Folha": Folha de pagamento oficial que gera demonstrativos e notas fiscais
+- "Simulação": Folha de simulação para projeção de valores sem gerar registros oficiais
+- O campo não pode ser editado após a criação
+
+**Para que serve:**
+Identifica se a folha é uma folha oficial ou uma simulação, permitindo diferenciar entre registros oficiais e projeções.
+
+**Como afeta o cálculo:**
+As simulações utilizam os mesmos modelos de pagamento e cálculos das folhas reais, mas os valores são apenas projetados e não geram demonstrativos oficiais ou notas fiscais.
+
+---
+
 ## Aba de Pagamentos
 
 A aba de pagamentos exibe os demonstrativos de pagamento de todos os produtores vinculados à folha, permitindo visualizar valores detalhados, realizar cálculos, exportar dados e gerenciar notas fiscais.
@@ -428,158 +584,86 @@ Não afeta os cálculos, apenas gera um documento de visualização/impressão d
 
 ---
 
-## Formulário de Folha de Pagamento
+## Demonstrativo de Pagamento
 
-O formulário de folha de pagamento permite criar novas folhas ou editar folhas existentes. O formulário é usado tanto para folhas normais quanto para simulações, com alguns campos sendo exibidos condicionalmente baseado no tipo de folha.
+O demonstrativo de pagamento é um documento PDF gerado para cada produtor, contendo todas as informações detalhadas sobre o cálculo do pagamento no período da folha.
 
 <figure>
-  <img src="folha-form.png" alt="Formulário de folha de pagamento do módulo Pay">
-  <figcaption>Formulário de folha de pagamento do módulo Pay</figcaption>
+  <img src="demonstrativo-folha.png" alt="Demonstrativo de pagamento do módulo Pay">
+  <figcaption>Demonstrativo de pagamento do módulo Pay</figcaption>
 </figure>
 
-> **Nota**: Formulário de criação e edição de folhas de pagamento com os campos principais numerados para referência.
+### Estrutura do Demonstrativo
 
-## Descrição dos Elementos do Formulário
+O demonstrativo é dividido em seções principais:
 
-Seguindo a numeração presente na imagem acima:
+**1. Cabeçalho**
+- Logo da cooperativa/empresa
+- Número do demonstrativo
+- Título "DEMONSTRATIVO DA FOLHA DE LEITE"
+- Referência do período (ex: "06/2025")
+- Dados da conta (nome, CNPJ)
+- Dados da rota e linha de produção
+- Dados do produtor (código, nome, CPF)
+- Dados da propriedade (código, nome, inscrição)
+- Período de fornecimento
 
-**1. Código**
+**2. Tabela de Coletas**
+- Lista todas as coletas do período
+- Exibe: Data, Volume (L), Temperatura (°C)
+- Pode incluir colunas adicionais:
+  - FP (L): Volume fora do padrão
+  - ÁGUA (L): Volume de água descontado por crioscopia
+- Resumo: Quantidade de coletas, volume médio diário, volume total, temperatura média
 
-Campo de texto opcional que permite definir um código identificador para a folha de pagamento (máximo 20 caracteres). Este campo só aparece para folhas normais (não simulações).
+**3. Composição do Pagamento**
+- Tabela detalhada com:
+  - DESCRIÇÃO: Nome do item (Preço Base, Bonificações, Deduções, etc.)
+  - QUANTIDADE: Quantidade aplicada
+  - PREÇO: Valor unitário
+  - CRÉDITO: Valores adicionados ao pagamento
+  - DÉBITO: Valores descontados do pagamento
+- Totalização: Soma de créditos e débitos
+- Dados bancários: Banco, Agência, Conta
+- Preço médio por litro
+- Saldo devedor atual (se houver)
+- Líquido a receber
 
-**Como ajustar:**
-- Ao criar ou editar uma folha, preencha o campo "Código" com um identificador único
-- O código é opcional, mas recomendado para facilitar a identificação da folha
-- Não pode ser editado quando a folha está fechada
+**4. Tabela de Qualidade**
+- Parâmetros de qualidade do leite:
+  - CPP (Contagem de Plaquetas)
+  - CCS (Contagem de Células Somáticas)
+  - Gordura
+  - Proteína
+  - Lactose
+  - ESD (Extrato Seco Desengordurado)
+  - EST (Extrato Seco Total)
 
-**Para que serve:**
-Permite identificar a folha de pagamento através de um código personalizado, facilitando a busca e organização das folhas no sistema.
+**5. Rodapé**
+- Nome do portador (produtor)
+- Data de geração
+- Informações da plataforma
 
-**Como afeta o cálculo:**
-O código não afeta os cálculos da folha, sendo apenas um identificador para organização e referência.
+### Como Gerar o Demonstrativo
 
----
+**Individual**:
+- Na aba de pagamentos, clique no ícone de impressora (badge 15) na linha do pagamento desejado
+- O demonstrativo será gerado em PDF e aberto para visualização/impressão
 
-**2. Consolidação**
+**Em Lote**:
+- No menu "Ações" (badge 1), selecione "Demonstrativos em lote"
+- Selecione os pagamentos desejados
+- O sistema gerará um PDF único com todos os demonstrativos selecionados
 
-Campo obrigatório do tipo select2 que permite selecionar uma consolidação de qualidade fechada para vincular à folha de pagamento.
+### Configurações do Demonstrativo
 
-**Como ajustar:**
-- Clique no campo "Consolidação" para abrir a lista de consolidações disponíveis
-- Apenas consolidações fechadas aparecem na lista
-- Selecione a consolidação desejada
-- O campo é obrigatório e deve ser preenchido para salvar a folha
-
-**Para que serve:**
-Vincula a folha de pagamento a uma consolidação de qualidade específica, garantindo que os dados de qualidade utilizados nos cálculos sejam consistentes e fechados.
-
-**Como afeta o cálculo:**
-A consolidação selecionada determina quais dados de qualidade (análises laboratoriais, indicadores, etc.) serão utilizados no cálculo dos pagamentos dos produtores. Alterar a consolidação após o cálculo força o recálculo da folha.
-
----
-
-**3. Referência**
-
-Campo de texto obrigatório que identifica a referência da folha de pagamento (máximo 60 caracteres). Geralmente contém informações como mês/ano ou período.
-
-**Como ajustar:**
-- Preencha o campo "Referência" com um identificador descritivo (ex: "OUTUBRO 2025", "2025/10")
-- O campo é obrigatório e deve ser preenchido para salvar a folha
-- Não pode ser editado quando a folha está fechada
-
-**Para que serve:**
-Identifica a folha de pagamento através de uma referência descritiva, facilitando a localização e organização das folhas no sistema.
-
-**Como afeta o cálculo:**
-A referência não afeta os cálculos da folha, sendo apenas um identificador para organização e referência.
-
----
-
-**4. Data de corte por**
-
-Campo do tipo select2 que permite escolher a base de cálculo para as datas de corte (Coleta ou Viagem). Este campo só aparece para folhas normais (não simulações).
-
-**Como ajustar:**
-- Selecione "Coleta" para usar a data de coleta do leite como base
-- Selecione "Viagem" para usar a data da viagem de transporte como base
-- O campo é opcional e tem valor padrão "Viagem"
-
-**Para que serve:**
-Define qual data será utilizada como referência para determinar o período de fornecimento considerado no cálculo da folha.
-
-**Como afeta o cálculo:**
-A escolha entre "Coleta" e "Viagem" determina quais registros de fornecimento serão incluídos no período da folha, baseado na data selecionada. Isso pode afetar quais produtores e volumes serão considerados no cálculo.
-
----
-
-**5. Data de corte inicial**
-
-Campo de data obrigatório que define o início do período de fornecimento considerado na folha de pagamento.
-
-**Como ajustar:**
-- Preencha o campo com a data inicial do período (formato DD/MM/AAAA)
-- O campo é obrigatório e deve ser preenchido para salvar a folha
-- Para folhas existentes, só pode ser editado durante a criação (não pode ser alterado após salvar)
-
-**Para que serve:**
-Define o início do período de fornecimento de leite que será considerado no cálculo da folha de pagamento.
-
-**Como afeta o cálculo:**
-A data inicial determina quais registros de fornecimento serão incluídos no cálculo. Apenas fornecimentos com data igual ou posterior à data inicial serão considerados.
-
----
-
-**6. Data de corte final**
-
-Campo de data obrigatório que define o fim do período de fornecimento considerado na folha de pagamento.
-
-**Como ajustar:**
-- Preencha o campo com a data final do período (formato DD/MM/AAAA)
-- O campo é obrigatório e deve ser preenchido para salvar a folha
-- A data final deve ser posterior à data inicial
-- Para folhas existentes, só pode ser editado durante a criação (não pode ser alterado após salvar)
-
-**Para que serve:**
-Define o fim do período de fornecimento de leite que será considerado no cálculo da folha de pagamento.
-
-**Como afeta o cálculo:**
-A data final determina quais registros de fornecimento serão incluídos no cálculo. Apenas fornecimentos com data igual ou anterior à data final serão considerados.
-
----
-
-**7. Status**
-
-Campo do tipo select2 que exibe o status atual da folha de pagamento (Aberta, Bloqueada ou Fechada). Este campo só aparece para folhas normais (não simulações) e está sempre desabilitado.
-
-**Como ajustar:**
-- O status é definido automaticamente pelo sistema
-- "Aberta" (A): Folha criada e disponível para cálculo e edição
-- "Bloqueada" (B): Folha bloqueada devido a consolidação de qualidade aberta
-- "Fechada" (F): Folha finalizada e não pode mais ser editada
-- O campo não pode ser editado diretamente
-
-**Para que serve:**
-Indica o estado atual da folha, permitindo identificar rapidamente quais folhas podem ser editadas, calculadas ou estão finalizadas.
-
-**Como afeta o cálculo:**
-Folhas fechadas não podem mais ser recalculadas ou editadas. Folhas bloqueadas não podem ser calculadas até que a consolidação de qualidade seja fechada.
-
----
-
-**8. Tipo**
-
-Campo do tipo select2 que exibe o tipo da folha (Folha ou Simulação). O campo está sempre visível e desabilitado.
-
-**Como ajustar:**
-- O tipo é definido no momento da criação da folha
-- "Folha": Folha de pagamento oficial que gera demonstrativos e notas fiscais
-- "Simulação": Folha de simulação para projeção de valores sem gerar registros oficiais
-- O campo não pode ser editado após a criação
-
-**Para que serve:**
-Identifica se a folha é uma folha oficial ou uma simulação, permitindo diferenciar entre registros oficiais e projeções.
-
-**Como afeta o cálculo:**
-As simulações utilizam os mesmos modelos de pagamento e cálculos das folhas reais, mas os valores são apenas projetados e não geram demonstrativos oficiais ou notas fiscais.
+As seguintes configurações podem ser ajustadas em Configurações > Pagamento:
+- Exibir preço líquido no demonstrativo
+- Exibir consolidação de qualidade no demonstrativo
+- Exibir leite fora do padrão no demonstrativo
+- Exibir desconto por crioscopia no demonstrativo
+- Ocultar preço médio no demonstrativo
+- Exibir dados da nota fiscal no demonstrativo
+- Quantidade de casas decimais do valor unitário
 
 ---
