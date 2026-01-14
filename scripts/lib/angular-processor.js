@@ -989,21 +989,40 @@ export async function processAngularTemplates(page, additionalData = {}) {
                 '$scope',
                 function($scope) {
                     console.log('tabelapreco.ValorCtrl sendo inicializado...');
-                    // Use real data if provided
-                    const valoresData = additionalData && additionalData.valores ? additionalData.valores : [
-                        {
-                            id: 1,
-                            codigo: null,
-                            ano: 2025,
-                            mes: 10,
-                            valor: 2.45
+                    
+                    // Get data from additionalData or use mock
+                    let valoresData = [];
+                    let recordData = {};
+                    
+                    if (additionalData && additionalData.valores) {
+                        valoresData = additionalData.valores;
+                        recordData = additionalData.record || {};
+                    } else if (additionalData && Array.isArray(additionalData)) {
+                        // Se additionalData é um array direto (dados do MCP)
+                        valoresData = additionalData.map(v => ({
+                            id: v.id,
+                            codigo: v.codigo || null,
+                            ano: v.ano,
+                            mes: v.mes,
+                            valor: parseFloat(v.valor) || 0
+                        }));
+                        // Pegar dados da tabela do primeiro registro
+                        if (valoresData.length > 0 && additionalData[0].tabela_nome) {
+                            recordData = {
+                                id: additionalData[0].tabela_preco_id,
+                                codigo: additionalData[0].tabela_codigo || null,
+                                nome: additionalData[0].tabela_nome
+                            };
                         }
-                    ];
-                    const recordData = additionalData && additionalData.record ? additionalData.record : {
-                        id: 74,
-                        codigo: "002",
-                        nome: "Mercado"
-                    };
+                    } else {
+                        // Mock data fallback
+                        valoresData = [
+                            { id: 1, codigo: null, ano: 2025, mes: 10, valor: 2.45 },
+                            { id: 2, codigo: "01", ano: 2025, mes: 9, valor: 2.40 },
+                            { id: 3, codigo: null, ano: 2025, mes: 8, valor: 2.35 }
+                        ];
+                        recordData = { id: 5, codigo: null, nome: "CEPEA" };
+                    }
                     
                     // Set data immediately
                     $scope.record = recordData;
@@ -1022,6 +1041,9 @@ export async function processAngularTemplates(page, additionalData = {}) {
                     
                     console.log('tabelapreco.ValorCtrl inicializado com', valoresData.length, 'valores');
                     console.log('Record:', recordData);
+                    if (valoresData.length > 0) {
+                        console.log('Primeiro valor:', valoresData[0]);
+                    }
                     
                     // Force immediate digest
                     if (!$scope.$$phase && !$scope.$root.$$phase) {

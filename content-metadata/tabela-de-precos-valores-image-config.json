@@ -4,8 +4,8 @@
   "outputImage": "content/tabela-de-precos-valores.png",
   "renderOptions": {
     "viewport": {
-      "width": 1400,
-      "height": 800,
+      "width": 1600,
+      "height": 1200,
       "deviceScaleFactor": 2
     }
   },
@@ -42,6 +42,7 @@
   ],
   "database": {
     "enabled": true,
+    "useMCP": true,
     "dataFile": "content-metadata/tabela-de-precos-valores-data.json"
   },
   "fillData": {

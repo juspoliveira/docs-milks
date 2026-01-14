@@ -17,10 +17,10 @@
 * [Acordos comerciais](content/acordos-comerciais.md)
 * [Relatórios e Conciliações](content/relatorios-e-conciliacoes.md)
 
-## Documentação Local
+<!-- ## Documentação Local -->
 
-* [Instalação](docs/instalacao.md)
-* [Configuração](docs/configuracao.md)
-* [Uso](docs/uso.md)
-* [Referência de API](docs/api.md)
-* [Exemplos](docs/exemplos.md)
+<!-- * [Instalação](docs/instalacao.md) -->
+<!-- * [Configuração](docs/configuracao.md) -->
+<!-- * [Uso](docs/uso.md) -->
+<!-- * [Referência de API](docs/api.md) -->
+<!-- * [Exemplos](docs/exemplos.md) -->

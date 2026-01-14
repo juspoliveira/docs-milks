@@ -69,9 +69,16 @@ async function fetchDataFromMCP(config, preFetchedData = null) {
         return null;
     }
 
+    // Verificar se é para valores da tabela de preços (não formatar como folha)
+    const isValoresTabela = config.htmlPath && config.htmlPath.includes('tabelapreco.valor.tab');
+    
     // Se dados já foram pré-carregados, usar diretamente
     if (preFetchedData && Array.isArray(preFetchedData)) {
         console.log(`   ✅ Usando ${preFetchedData.length} registros pré-carregados do MCP`);
+        // Para valores da tabela, retornar dados sem formatação
+        if (isValoresTabela) {
+            return preFetchedData;
+        }
         return formatMCPData(preFetchedData);
     }
 
@@ -84,6 +91,10 @@ async function fetchDataFromMCP(config, preFetchedData = null) {
             console.log('   🔍 Carregando dados do MCP via arquivo temporário...');
             const tempData = JSON.parse(readFileSync(tempDataPath, 'utf-8'));
             if (tempData && Array.isArray(tempData.result)) {
+                // Para valores da tabela, retornar dados sem formatação
+                if (isValoresTabela) {
+                    return tempData.result;
+                }
                 const formatted = formatMCPData(tempData.result);
                 // NÃO deletar arquivo temporário aqui - será usado durante o processamento
                 // O arquivo será limpo no final do processamento se necessário
@@ -200,9 +211,35 @@ async function generateFormImage(config, databaseRecord = null) {
             try {
                 const mcpData = await fetchDataFromMCP(config);
                 if (mcpData && Array.isArray(mcpData) && mcpData.length > 0) {
-                    additionalData.records = mcpData;
-                    dataLoaded = true;
-                    console.log(`   ✅ Carregados ${mcpData.length} registros do banco via MCP`);
+                    // Verificar se é estrutura de valores da tabela de preços
+                    if (config.htmlPath && config.htmlPath.includes('tabelapreco.valor.tab')) {
+                        // Formatar dados para valores da tabela de preços
+                        const valores = mcpData.map(v => {
+                            return {
+                            id: v.id || null,
+                            codigo: v.codigo || null,
+                            ano: v.ano ? parseInt(v.ano) : null,
+                            mes: v.mes ? parseInt(v.mes) : null,
+                            valor: v.valor ? parseFloat(v.valor) : 0
+                        };
+                        });
+                        
+                        // Pegar dados da tabela do primeiro registro
+                        const record = mcpData.length > 0 ? {
+                            id: mcpData[0].tabela_preco_id || 5,
+                            codigo: mcpData[0].tabela_codigo || null,
+                            nome: mcpData[0].tabela_nome || 'Tabela de Preços'
+                        } : { id: 5, codigo: null, nome: 'CEPEA' };
+                        
+                        additionalData.valores = valores;
+                        additionalData.record = record;
+                        dataLoaded = true;
+                        console.log(`   ✅ Carregados ${valores.length} valores do banco via MCP para tabela "${record.nome}"`);
+                    } else {
+                        additionalData.records = mcpData;
+                        dataLoaded = true;
+                        console.log(`   ✅ Carregados ${mcpData.length} registros do banco via MCP`);
+                    }
                 }
             } catch (error) {
                 console.warn(`   ⚠️  Erro ao buscar dados via MCP: ${error.message}`);
@@ -586,6 +623,95 @@ async function generateFormImage(config, databaseRecord = null) {
                     console.log(`   📊 Total de caracteres nas linhas: ${newRowsHTML.length}`);
                 } else {
                     console.log('   ⚠️ Template ng-repeat-start/end não encontrado no formato esperado');
+                    console.log(`   📋 Primeiros 500 caracteres do tbody: ${tbodyContent.substring(0, 500)}`);
+                }
+            }
+        }
+    }
+    
+    // Processar ng-repeat para valores da tabela de preços
+    if (additionalData.valores && additionalData.valores.length > 0 && formHTML.includes('ng-repeat="valor in valores"')) {
+        console.log('🔄 Pré-processando HTML para criar linhas da tabela de valores...');
+        console.log(`   📊 Total de valores: ${additionalData.valores.length}`);
+        
+        // Encontrar o tbody que contém o ng-repeat
+        let tbodyStartRegex = /<tbody[^>]*>/;
+        let tbodyMatch = formHTML.match(tbodyStartRegex);
+        
+        if (tbodyMatch) {
+            const tbodyStartIndex = formHTML.indexOf(tbodyMatch[0]);
+            const tbodyStartTag = tbodyMatch[0];
+            
+            // Encontrar o conteúdo do tbody até o próximo </tbody>
+            let tbodyEndIndex = formHTML.indexOf('</tbody>', tbodyStartIndex);
+            if (tbodyEndIndex === -1) {
+                tbodyEndIndex = formHTML.indexOf('</tbody>', tbodyStartIndex + tbodyStartTag.length);
+            }
+            
+            if (tbodyEndIndex !== -1) {
+                const tbodyContent = formHTML.substring(tbodyStartIndex + tbodyStartTag.length, tbodyEndIndex);
+                console.log(`   📋 Tbody encontrado, tamanho do conteúdo: ${tbodyContent.length} caracteres`);
+                
+                // Encontrar o template de linha com ng-repeat
+                const trRegex = /<tr[^>]*ng-repeat\s*=\s*["']valor\s+in\s+valores["'][^>]*>([\s\S]*?)<\/tr>/;
+                let trMatch = tbodyContent.match(trRegex);
+                
+                if (!trMatch) {
+                    // Tentar com regex mais flexível
+                    const trRegex2 = /<tr[^>]*ng-repeat[^>]*valor[^>]*in[^>]*valores[^>]*>([\s\S]*?)<\/tr>/;
+                    trMatch = tbodyContent.match(trRegex2);
+                }
+                
+                if (trMatch) {
+                    const templateRowHTML = trMatch[1];
+                    console.log(`   📊 Encontrado template de valor. Criando ${additionalData.valores.length} linhas...`);
+                    console.log(`   📋 Tamanho do template: ${templateRowHTML.length} caracteres`);
+                    console.log(`   📋 Template (primeiros 300 chars): ${templateRowHTML.substring(0, 300)}`);
+                    
+                    // Criar novas linhas para cada valor - construir diretamente sem depender do template
+                    let newRowsHTML = '';
+                    for (let i = 0; i < additionalData.valores.length; i++) {
+                        const valor = additionalData.valores[i];
+                        
+                        // Valores formatados
+                        const codigoVal = valor.codigo || '';
+                        const anoVal = String(valor.ano || '');
+                        const mesVal = String(valor.mes || '');
+                        const valorFormatado = valor.valor ? parseFloat(valor.valor).toFixed(4).replace(/\.?0+$/, '') : '0';
+                        
+                        // Construir linha diretamente com os valores (sem quebras de linha extras)
+                        // Garantir que os valores sejam inseridos corretamente
+                        const row = `<td style="padding: 12px; border-bottom: 1px solid #eee;">${codigoVal}</td><td style="padding: 12px; border-bottom: 1px solid #eee;">${anoVal}</td><td style="padding: 12px; border-bottom: 1px solid #eee;">${mesVal}</td><td style="padding: 12px; border-bottom: 1px solid #eee;">${valorFormatado}</td><td style="padding: 12px; border-bottom: 1px solid #eee; width:70px;"><i class="fa fa-edit" tooltip="Editar" style="cursor: pointer; margin-right: 8px;"></i><i class="fa fa-trash m-l-xs cursor" tooltip="Excluir" style="cursor: pointer;"></i></td>`;
+                        
+                        newRowsHTML += `<tr style="display: table-row; visibility: visible; opacity: 1;">${row}</tr>`;
+                    }
+                    
+                    console.log(`   ✅ ${additionalData.valores.length} linhas de valores criadas`);
+                    console.log(`   📊 Primeira linha (primeiros 300 chars): ${newRowsHTML.substring(0, 300)}`);
+                    
+                    // Remover o tbody com ng-if="valores.length == 0" se existir
+                    formHTML = formHTML.replace(/<tr[^>]*ng-if\s*=\s*["']valores\.length\s*==\s*0["'][^>]*>[\s\S]*?<\/tr>/g, '');
+                    
+                    // Substituir o conteúdo do tbody
+                    const newTbodyContent = newRowsHTML;
+                    formHTML = formHTML.substring(0, tbodyStartIndex + tbodyStartTag.length) + 
+                               newTbodyContent + 
+                               formHTML.substring(tbodyEndIndex);
+                    
+                    // Remover COMPLETAMENTE o ng-repeat original do HTML
+                    formHTML = formHTML.replace(/<tr[^>]*ng-repeat\s*=\s*["']valor\s+in\s+valores["'][^>]*>[\s\S]*?<\/tr>/g, '');
+                    formHTML = formHTML.replace(/\s+ng-repeat\s*=\s*["']valor\s+in\s+valores["']/g, '');
+                    
+                    // Substituir também record.codigo e record.nome no cabeçalho
+                    if (additionalData.record) {
+                        formHTML = formHTML.replace(/\{\{record\.codigo\}\}/g, additionalData.record.codigo || '');
+                        formHTML = formHTML.replace(/\{\{record\.nome\}\}/g, additionalData.record.nome || '');
+                    }
+                    
+                    console.log(`   ✅ ${additionalData.valores.length} linhas de valores criadas`);
+                    console.log(`   📊 Total de caracteres nas linhas: ${newRowsHTML.length}`);
+                } else {
+                    console.log('   ⚠️ Template ng-repeat="valor in valores" não encontrado no formato esperado');
                     console.log(`   📋 Primeiros 500 caracteres do tbody: ${tbodyContent.substring(0, 500)}`);
                 }
             }
@@ -1260,6 +1386,85 @@ async function generateFormImage(config, databaseRecord = null) {
             // Wait for rendering
             await new Promise(resolve => setTimeout(resolve, 1000));
             
+            // Verificação específica para valores da tabela de preços
+            if (additionalData && additionalData.valores && Array.isArray(additionalData.valores) && config.htmlPath && config.htmlPath.includes('tabelapreco.valor.tab')) {
+                const valoresCheck = await page.evaluate(() => {
+                    const tableRows = document.querySelectorAll('tbody tr');
+                    const rowsWithData = Array.from(tableRows).filter(row => {
+                        const cells = row.querySelectorAll('td');
+                        if (cells.length === 0) return false;
+                        // Verificar se pelo menos uma célula tem conteúdo (não vazio e não só espaços)
+                        return Array.from(cells).some(cell => {
+                            const text = cell.textContent.trim();
+                            return text.length > 0 && !text.includes('{{');
+                        });
+                    });
+                    
+                    // Verificar se há interpolações não resolvidas
+                    const textContent = document.body.textContent || '';
+                    const hasUnresolved = textContent.includes('{{valor.') || 
+                                         textContent.includes('{{record.');
+                    
+                    return {
+                        totalRows: tableRows.length,
+                        rowsWithData: rowsWithData.length,
+                        hasUnresolved,
+                        firstRowContent: rowsWithData.length > 0 ? rowsWithData[0].textContent.trim().substring(0, 100) : ''
+                    };
+                });
+                
+                if (valoresCheck.rowsWithData === 0 || valoresCheck.hasUnresolved) {
+                    console.log('⚠️  Dados de valores não renderizados corretamente, aplicando novamente...');
+                    console.log(`   Linhas totais: ${valoresCheck.totalRows}, com dados: ${valoresCheck.rowsWithData}`);
+                    
+                    // Aplicar dados novamente e garantir que as linhas sejam visíveis
+                    await page.evaluate((additionalData) => {
+                        const body = document.body;
+                        const injector = angular.element(body).injector();
+                        if (injector) {
+                            const valorElements = document.querySelectorAll('[ng-controller="tabelapreco.ValorCtrl"]');
+                            valorElements.forEach(element => {
+                                try {
+                                    const scope = angular.element(element).scope();
+                                    if (scope) {
+                                        if (additionalData.record) {
+                                            scope.record = JSON.parse(JSON.stringify(additionalData.record));
+                                        }
+                                        if (additionalData.valores) {
+                                            scope.valores = JSON.parse(JSON.stringify(additionalData.valores));
+                                        }
+                                        scope.viewState = 'edit';
+                                        
+                                        if (!scope.$$phase && !scope.$root.$$phase) {
+                                            scope.$apply();
+                                        }
+                                    }
+                                } catch (e) {
+                                    console.warn('Erro:', e.message);
+                                }
+                            });
+                            
+                            // Garantir que as linhas da tabela sejam visíveis
+                            const tableRows = document.querySelectorAll('tbody tr');
+                            tableRows.forEach(row => {
+                                row.style.display = 'table-row';
+                                row.style.visibility = 'visible';
+                                row.style.opacity = '1';
+                                row.style.height = 'auto';
+                            });
+                        }
+                    }, additionalData);
+                    
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                } else {
+                    console.log('✅ Dados de valores renderizados corretamente');
+                    console.log(`   Linhas com dados: ${valoresCheck.rowsWithData}/${valoresCheck.totalRows}`);
+                    if (valoresCheck.firstRowContent) {
+                        console.log(`   Primeira linha: ${valoresCheck.firstRowContent}`);
+                    }
+                }
+            }
+            
             // Verificação específica para aba de pagamentos
             if (additionalData && additionalData.pagamentos && Array.isArray(additionalData.pagamentos)) {
                 const pagamentoCheck = await page.evaluate(() => {
@@ -1428,6 +1633,54 @@ async function generateFormImage(config, databaseRecord = null) {
         // Processar templates AngularJS novamente após recarregar
         if (hasAngularTemplates && includeAngular) {
             await processAngularTemplates(page, additionalData);
+            
+            // Para valores da tabela de preços, garantir que os dados sejam reaplicados após o AngularJS
+            if (additionalData.valores && additionalData.valores.length > 0 && config.htmlPath && config.htmlPath.includes('tabelapreco.valor.tab')) {
+                console.log('🔄 Reaplicando valores após processamento AngularJS...');
+                await page.evaluate((valoresData, recordData) => {
+                    // Aplicar dados ao controller
+                    const valorElements = document.querySelectorAll('[ng-controller="tabelapreco.ValorCtrl"]');
+                    valorElements.forEach(element => {
+                        try {
+                            const scope = angular.element(element).scope();
+                            if (scope) {
+                                scope.record = recordData;
+                                scope.valores = valoresData;
+                                scope.viewState = 'edit';
+                                if (!scope.$$phase && !scope.$root.$$phase) {
+                                    scope.$apply();
+                                }
+                            }
+                        } catch (e) {
+                            console.warn('Erro ao aplicar dados:', e.message);
+                        }
+                    });
+                    
+                    // Preencher células diretamente (fallback se AngularJS não renderizar)
+                    const tbody = document.querySelector('tbody');
+                    if (tbody) {
+                        const rows = Array.from(tbody.querySelectorAll('tr')).filter(row => !row.querySelector('th'));
+                        rows.forEach((row, index) => {
+                            if (valoresData[index]) {
+                                const valor = valoresData[index];
+                                const tds = Array.from(row.querySelectorAll('td'));
+                                const codigoVal = valor.codigo || '';
+                                const anoVal = String(valor.ano || '');
+                                const mesVal = String(valor.mes || '');
+                                const valorFormatado = valor.valor ? parseFloat(valor.valor).toFixed(4).replace(/\.?0+$/, '') : '0';
+                                
+                                if (tds.length >= 4) {
+                                    tds[0].textContent = codigoVal;
+                                    tds[1].textContent = anoVal;
+                                    tds[2].textContent = mesVal;
+                                    tds[3].textContent = valorFormatado;
+                                }
+                            }
+                        });
+                    }
+                }, additionalData.valores, additionalData.record);
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
             await new Promise(resolve => setTimeout(resolve, 500));
         }
     }
@@ -3124,6 +3377,139 @@ async function generateFormImage(config, databaseRecord = null) {
         }
     }
     
+    // Verificação específica para valores da tabela de preços
+    if (additionalData.valores && additionalData.valores.length > 0 && config.htmlPath && config.htmlPath.includes('tabelapreco.valor.tab')) {
+        console.log('🔍 Verificando valores da tabela de preços antes do screenshot...');
+        const valoresDebug = await page.evaluate((valoresData) => {
+            const body = document.body;
+            const tbody = body.querySelector('tbody');
+            if (tbody) {
+                const rows = Array.from(tbody.querySelectorAll('tr')).filter(row => !row.querySelector('th'));
+                
+                console.log(`Encontradas ${rows.length} linhas na tabela`);
+                
+                // Garantir que todas as linhas sejam visíveis e preencher com dados
+                rows.forEach((row, index) => {
+                    row.style.cssText = 'display: table-row !important; visibility: visible !important; opacity: 1 !important; height: auto !important;';
+                    
+                    // Garantir que todas as células sejam visíveis e tenham conteúdo
+                    const tds = Array.from(row.querySelectorAll('td'));
+                    
+                    // Preencher células diretamente com dados
+                    if (valoresData[index]) {
+                        const valor = valoresData[index];
+                        const codigoVal = valor.codigo || '';
+                        const anoVal = String(valor.ano || '');
+                        const mesVal = String(valor.mes || '');
+                        const valorFormatado = valor.valor ? parseFloat(valor.valor).toFixed(4).replace(/\.?0+$/, '') : '0';
+                        
+                        // Preencher as primeiras 4 células com dados
+                        if (tds.length >= 4) {
+                            // Primeira célula: código
+                            tds[0].innerHTML = codigoVal;
+                            tds[0].textContent = codigoVal;
+                            tds[0].style.cssText = 'padding: 12px; border-bottom: 1px solid #eee; display: table-cell !important; visibility: visible !important;';
+                            
+                            // Segunda célula: ano
+                            tds[1].innerHTML = anoVal;
+                            tds[1].textContent = anoVal;
+                            tds[1].style.cssText = 'padding: 12px; border-bottom: 1px solid #eee; display: table-cell !important; visibility: visible !important;';
+                            
+                            // Terceira célula: mês
+                            tds[2].innerHTML = mesVal;
+                            tds[2].textContent = mesVal;
+                            tds[2].style.cssText = 'padding: 12px; border-bottom: 1px solid #eee; display: table-cell !important; visibility: visible !important;';
+                            
+                            // Quarta célula: valor
+                            tds[3].innerHTML = valorFormatado;
+                            tds[3].textContent = valorFormatado;
+                            tds[3].style.cssText = 'padding: 12px; border-bottom: 1px solid #eee; display: table-cell !important; visibility: visible !important;';
+                        }
+                        // Células 4+ são de ação (ícones), aplicar apenas estilo
+                        for (let i = 4; i < tds.length; i++) {
+                            tds[i].style.cssText = 'padding: 12px; border-bottom: 1px solid #eee; display: table-cell !important; visibility: visible !important;';
+                        }
+                    } else {
+                        // Se não houver dados, apenas aplicar estilo
+                        tds.forEach(td => {
+                            td.style.cssText = 'padding: 12px; border-bottom: 1px solid #eee; display: table-cell !important; visibility: visible !important;';
+                        });
+                    }
+                });
+                
+                // Garantir que a tabela seja visível
+                const table = tbody.closest('table');
+                if (table) {
+                    table.style.cssText = 'width: 100%; border-collapse: collapse; display: table !important; visibility: visible !important;';
+                }
+                
+                // Garantir que o tbody seja visível
+                tbody.style.cssText = 'display: table-row-group !important; visibility: visible !important;';
+                
+                // Garantir que o container da tabela seja visível
+                const tableResponsive = tbody.closest('.table-responsive');
+                if (tableResponsive) {
+                    tableResponsive.style.cssText = 'display: block !important; visibility: visible !important; width: 100% !important; overflow-x: auto !important;';
+                }
+                
+                // Verificar conteúdo após preenchimento
+                const firstRowCells = rows.length > 0 ? Array.from(rows[0].querySelectorAll('td')).map(td => td.textContent.trim()) : [];
+                
+                return {
+                    tbodyFound: true,
+                    rowCount: rows.length,
+                    expectedRows: valoresData.length,
+                    firstRowHTML: rows.length > 0 ? rows[0].outerHTML.substring(0, 300) : 'N/A',
+                    firstRowText: rows.length > 0 ? rows[0].textContent : 'N/A',
+                    firstRowCells: firstRowCells,
+                    firstRowCellsCount: firstRowCells.length,
+                    allRowsVisible: rows.every(row => {
+                        const style = window.getComputedStyle(row);
+                        return style.display === 'table-row' && style.visibility === 'visible';
+                    })
+                };
+            }
+            return { tbodyFound: false };
+        }, additionalData.valores);
+        
+        console.log('🔍 Debug valores - HTML da tabela:', JSON.stringify(valoresDebug, null, 2));
+        
+        if (valoresDebug.rowCount !== valoresDebug.expectedRows) {
+            console.log(`⚠️ Número de linhas não corresponde: esperado ${valoresDebug.expectedRows}, encontrado ${valoresDebug.rowCount}`);
+        }
+        
+        // Se as células ainda estão vazias, preencher novamente
+        if (valoresDebug.firstRowCells && valoresDebug.firstRowCells.filter(c => c && c.trim()).length < 3) {
+            console.log('⚠️ Células ainda vazias, preenchendo novamente...');
+            await page.evaluate((valoresData) => {
+                const tbody = document.querySelector('tbody');
+                if (tbody) {
+                    const rows = Array.from(tbody.querySelectorAll('tr')).filter(row => !row.querySelector('th'));
+                    rows.forEach((row, index) => {
+                        if (valoresData[index]) {
+                            const valor = valoresData[index];
+                            const tds = Array.from(row.querySelectorAll('td'));
+                            if (tds.length > 0) tds[0].textContent = valor.codigo || '';
+                            if (tds.length > 1) tds[1].textContent = String(valor.ano || '');
+                            if (tds.length > 2) tds[2].textContent = String(valor.mes || '');
+                            if (tds.length > 3) {
+                                const valorFormatado = valor.valor ? parseFloat(valor.valor).toFixed(4).replace(/\.?0+$/, '') : '0';
+                                tds[3].textContent = valorFormatado;
+                            }
+                        }
+                    });
+                }
+            }, additionalData.valores);
+            
+            // Aguardar um pouco para garantir que o preenchimento foi aplicado
+            await new Promise(resolve => setTimeout(resolve, 300));
+        }
+        
+        if (!valoresDebug.allRowsVisible) {
+            console.log('⚠️ Algumas linhas de valores não estão visíveis, aplicando correções...');
+        }
+    }
+    
     // Verificação final antes do screenshot - garantir que cards e ícones estejam visíveis
     if (additionalData.pagamentos && additionalData.pagamentos.length > 0) {
         await page.evaluate((estatisticas) => {
@@ -3619,6 +4005,277 @@ async function generateFormImage(config, databaseRecord = null) {
         
         // Aguardar um pouco mais para garantir que o alinhamento foi aplicado
         await new Promise(resolve => setTimeout(resolve, 200));
+    }
+    
+    // Preenchimento final de valores da tabela de preços ANTES do screenshot
+    if (additionalData.valores && additionalData.valores.length > 0) {
+        console.log('🔧 Preenchimento final de valores antes do screenshot...');
+        await page.evaluate((valoresData) => {
+            const tbody = document.querySelector('tbody');
+            if (tbody) {
+                const rows = Array.from(tbody.querySelectorAll('tr')).filter(row => !row.querySelector('th'));
+                console.log(`Preenchendo ${rows.length} linhas com dados...`);
+                
+                rows.forEach((row, index) => {
+                    if (valoresData[index]) {
+                        const valor = valoresData[index];
+                        const tds = Array.from(row.querySelectorAll('td'));
+                        const codigoVal = valor.codigo || '';
+                        const anoVal = String(valor.ano || '');
+                        const mesVal = String(valor.mes || '');
+                        const valorFormatado = valor.valor ? parseFloat(valor.valor).toFixed(4).replace(/\.?0+$/, '') : '0';
+                        
+                        // Preencher células usando innerHTML para garantir que funcione
+                        if (tds.length > 0) {
+                            // Primeira célula: código
+                            tds[0].innerHTML = codigoVal;
+                            tds[0].textContent = codigoVal;
+                        }
+                        if (tds.length > 1) {
+                            // Segunda célula: ano
+                            tds[1].innerHTML = anoVal;
+                            tds[1].textContent = anoVal;
+                        }
+                        if (tds.length > 2) {
+                            // Terceira célula: mês
+                            tds[2].innerHTML = mesVal;
+                            tds[2].textContent = mesVal;
+                        }
+                        if (tds.length > 3) {
+                            // Quarta célula: valor
+                            tds[3].innerHTML = valorFormatado;
+                            tds[3].textContent = valorFormatado;
+                        }
+                        
+                        // Garantir visibilidade e conteúdo
+                        tds.forEach((td, idx) => {
+                            td.style.setProperty('display', 'table-cell', 'important');
+                            td.style.setProperty('visibility', 'visible', 'important');
+                            td.style.setProperty('opacity', '1', 'important');
+                            // Se ainda estiver vazia após preenchimento, tentar novamente
+                            if (idx < 4 && !td.textContent.trim()) {
+                                if (idx === 0) td.innerHTML = codigoVal;
+                                else if (idx === 1) td.innerHTML = anoVal;
+                                else if (idx === 2) td.innerHTML = mesVal;
+                                else if (idx === 3) td.innerHTML = valorFormatado;
+                            }
+                        });
+                    }
+                });
+                
+                console.log('Preenchimento concluído');
+                return { rowsProcessed: rows.length };
+            }
+            return { error: 'Tbody não encontrado' };
+        }, additionalData.valores);
+        
+        // Verificar se o preenchimento funcionou e tentar novamente se necessário
+        const verifyFill = await page.evaluate(() => {
+            const tbody = document.querySelector('tbody');
+            if (tbody) {
+                const rows = Array.from(tbody.querySelectorAll('tr')).filter(row => !row.querySelector('th'));
+                if (rows.length > 0) {
+                    const firstRowTds = Array.from(rows[0].querySelectorAll('td'));
+                    return {
+                        rowsCount: rows.length,
+                        firstRowCells: firstRowTds.slice(0, 4).map(td => td.textContent.trim())
+                    };
+                }
+            }
+            return { rowsCount: 0, firstRowCells: [] };
+        });
+        
+        console.log(`   📊 Verificação pós-preenchimento: ${verifyFill.rowsCount} linhas, primeira linha: [${verifyFill.firstRowCells.join(', ')}]`);
+        
+        // Se ainda estiver vazio, tentar uma última vez com abordagem mais agressiva
+        if (verifyFill.firstRowCells.filter(c => c && c.length > 0).length < 3) {
+            console.log('   ⚠️ Células ainda vazias, tentando preenchimento final agressivo...');
+            await page.evaluate((valoresData) => {
+                const tbody = document.querySelector('tbody');
+                if (tbody) {
+                    const rows = Array.from(tbody.querySelectorAll('tr')).filter(row => !row.querySelector('th'));
+                    console.log(`Preenchendo ${rows.length} linhas com abordagem agressiva...`);
+                    rows.forEach((row, index) => {
+                        if (valoresData[index]) {
+                            const valor = valoresData[index];
+                            const tds = Array.from(row.querySelectorAll('td'));
+                            const codigoVal = valor.codigo || '';
+                            const anoVal = String(valor.ano || '');
+                            const mesVal = String(valor.mes || '');
+                            const valorFormatado = valor.valor ? parseFloat(valor.valor).toFixed(4).replace(/\.?0+$/, '') : '0';
+                            
+                            // Preencher células de forma mais agressiva
+                            if (tds.length > 0) {
+                                // Limpar completamente e preencher
+                                tds[0].textContent = '';
+                                tds[0].innerHTML = codigoVal;
+                                tds[0].textContent = codigoVal;
+                            }
+                            if (tds.length > 1) {
+                                tds[1].textContent = '';
+                                tds[1].innerHTML = anoVal;
+                                tds[1].textContent = anoVal;
+                            }
+                            if (tds.length > 2) {
+                                tds[2].textContent = '';
+                                tds[2].innerHTML = mesVal;
+                                tds[2].textContent = mesVal;
+                            }
+                            if (tds.length > 3) {
+                                tds[3].textContent = '';
+                                tds[3].innerHTML = valorFormatado;
+                                tds[3].textContent = valorFormatado;
+                            }
+                            
+                            // Forçar visibilidade
+                            tds.forEach(td => {
+                                td.style.cssText = 'display: table-cell !important; visibility: visible !important; opacity: 1 !important; padding: 12px !important;';
+                            });
+                        }
+                    });
+                    console.log('Preenchimento agressivo concluído');
+                }
+            }, additionalData.valores);
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        
+        // Aguardar para garantir que o preenchimento foi aplicado
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    
+    // Ajustar viewport para capturar toda a página antes do screenshot
+    const bodyHeight = await page.evaluate(() => {
+        return Math.max(
+            document.body.scrollHeight,
+            document.body.offsetHeight,
+            document.documentElement.clientHeight,
+            document.documentElement.scrollHeight,
+            document.documentElement.offsetHeight
+        );
+    });
+    
+    const bodyWidth = await page.evaluate(() => {
+        return Math.max(
+            document.body.scrollWidth,
+            document.body.offsetWidth,
+            document.documentElement.clientWidth,
+            document.documentElement.scrollWidth,
+            document.documentElement.offsetWidth
+        );
+    });
+    
+    console.log(`📐 Dimensões da página: ${bodyWidth}x${bodyHeight}`);
+    
+    // Preenchimento final ULTRA agressivo para valores da tabela de preços ANTES do screenshot
+    if (additionalData.valores && additionalData.valores.length > 0 && config.htmlPath && config.htmlPath.includes('tabelapreco.valor.tab')) {
+        console.log('🔧 Preenchimento final ULTRA agressivo antes do screenshot...');
+        await page.evaluate((valoresData, recordData) => {
+            const tbody = document.querySelector('tbody');
+            if (tbody) {
+                // Remover TODAS as linhas existentes
+                tbody.innerHTML = '';
+                
+                // Criar novas linhas com dados diretamente
+                valoresData.forEach((valor, index) => {
+                    const tr = document.createElement('tr');
+                    tr.style.cssText = 'display: table-row !important; visibility: visible !important; opacity: 1 !important;';
+                    
+                    const codigoVal = valor.codigo || '';
+                    const anoVal = String(valor.ano || '');
+                    const mesVal = String(valor.mes || '');
+                    const valorFormatado = valor.valor ? parseFloat(valor.valor).toFixed(4).replace(/\.?0+$/, '') : '0';
+                    
+                    // Código
+                    const td1 = document.createElement('td');
+                    td1.innerHTML = codigoVal;
+                    td1.textContent = codigoVal;
+                    td1.style.cssText = 'padding: 12px; border-bottom: 1px solid #eee; display: table-cell !important; visibility: visible !important; white-space: nowrap;';
+                    tr.appendChild(td1);
+                    
+                    // Ano
+                    const td2 = document.createElement('td');
+                    td2.innerHTML = anoVal;
+                    td2.textContent = anoVal;
+                    td2.style.cssText = 'padding: 12px; border-bottom: 1px solid #eee; display: table-cell !important; visibility: visible !important; white-space: nowrap;';
+                    tr.appendChild(td2);
+                    
+                    // Mês
+                    const td3 = document.createElement('td');
+                    td3.innerHTML = mesVal;
+                    td3.textContent = mesVal;
+                    td3.style.cssText = 'padding: 12px; border-bottom: 1px solid #eee; display: table-cell !important; visibility: visible !important; white-space: nowrap;';
+                    tr.appendChild(td3);
+                    
+                    // Valor
+                    const td4 = document.createElement('td');
+                    td4.innerHTML = valorFormatado;
+                    td4.textContent = valorFormatado;
+                    td4.style.cssText = 'padding: 12px; border-bottom: 1px solid #eee; display: table-cell !important; visibility: visible !important; white-space: nowrap;';
+                    tr.appendChild(td4);
+                    
+                    // Ações
+                    const td5 = document.createElement('td');
+                    td5.style.cssText = 'padding: 12px; border-bottom: 1px solid #eee; width:70px; display: table-cell !important; visibility: visible !important;';
+                    td5.innerHTML = '<i class="fa fa-edit" tooltip="Editar" style="cursor: pointer; margin-right: 8px;"></i><i class="fa fa-trash m-l-xs cursor" tooltip="Excluir" style="cursor: pointer;"></i>';
+                    tr.appendChild(td5);
+                    
+                    tbody.appendChild(tr);
+                });
+                
+                // Atualizar cabeçalho
+                const header = document.querySelector('.h4');
+                if (header && recordData) {
+                    const headerText = (recordData.codigo ? recordData.codigo + ' - ' : '') + (recordData.nome || 'Tabela de Preços');
+                    header.textContent = headerText;
+                    header.innerHTML = '<i class="fa fa-table"></i> ' + headerText;
+                }
+                
+                // Verificar se as linhas foram criadas corretamente
+                const finalRows = tbody.querySelectorAll('tr');
+                const firstRowCells = finalRows.length > 0 ? Array.from(finalRows[0].querySelectorAll('td')).map(td => td.textContent.trim()) : [];
+                console.log(`✅ ${finalRows.length} linhas criadas no preenchimento final`);
+                console.log(`📊 Primeira linha: [${firstRowCells.join(', ')}]`);
+                
+                return {
+                    rowsCreated: finalRows.length,
+                    firstRowCells: firstRowCells
+                };
+            }
+            return { rowsCreated: 0, firstRowCells: [] };
+        }, additionalData.valores, additionalData.record);
+        
+        const fillResult = await page.evaluate(() => {
+            const tbody = document.querySelector('tbody');
+            if (tbody) {
+                const rows = Array.from(tbody.querySelectorAll('tr')).filter(row => !row.querySelector('th'));
+                const firstRowCells = rows.length > 0 ? Array.from(rows[0].querySelectorAll('td')).map(td => td.textContent.trim()) : [];
+                return {
+                    rowsCount: rows.length,
+                    firstRowCells: firstRowCells
+                };
+            }
+            return { rowsCount: 0, firstRowCells: [] };
+        });
+        
+        console.log(`📊 Verificação pós-preenchimento final: ${fillResult.rowsCount} linhas, primeira linha: [${fillResult.firstRowCells.join(', ')}]`);
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    
+    // Ajustar viewport se necessário para capturar toda a área
+    const currentViewport = page.viewport();
+    // Para valores da tabela, garantir viewport maior para capturar toda a tabela
+    const minWidth = config.htmlPath && config.htmlPath.includes('tabelapreco.valor.tab') ? 1600 : bodyWidth + 100;
+    const minHeight = config.htmlPath && config.htmlPath.includes('tabelapreco.valor.tab') ? 1200 : bodyHeight + 100;
+    const newWidth = Math.max(currentViewport.width, minWidth);
+    const newHeight = Math.max(currentViewport.height, minHeight);
+    
+    if (newWidth > currentViewport.width || newHeight > currentViewport.height) {
+        await page.setViewport({
+            width: newWidth,
+            height: newHeight,
+            deviceScaleFactor: currentViewport.deviceScaleFactor || 2
+        });
+        console.log(`📐 Viewport ajustado para: ${newWidth}x${newHeight}`);
     }
     
     // Capturar screenshot
